@@ -1,0 +1,23 @@
+flutter : Building with 
+plugins requires symlink 
+support.
+At line:1 char:1
++ flutter build windows > 
+build_res.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
+    + CategoryInfo          
+    : NotSpecified: (Build  
+  ing with p...ymlink sup   
+ port.:String) [], Remot    
+eException
+    + FullyQualifiedErrorId 
+    : NativeCommandError
+ 
+
+Please enable Developer 
+Mode in your system 
+settings. Run
+  start 
+ms-settings:developers
+to open settings.

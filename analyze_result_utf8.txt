@@ -1,0 +1,170 @@
+﻿Analyzing semeste_project...                                    
+
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\cart_screen.dart:39:92 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\cart_screen.dart:83:43 - deprecated_member_use
+  error - Invalid constant value - lib\screens\cart_screen.dart:112:70 - invalid_constant
+  error - The getter 'borderMedium' isn't defined for the type 'AppTheme' - lib\screens\cart_screen.dart:112:79 - undefined_getter
+  error - Invalid constant value - lib\screens\cart_screen.dart:120:41 - invalid_constant
+  error - The getter 'w950' isn't defined for the type 'FontWeight' - lib\screens\cart_screen.dart:120:52 - undefined_getter
+  error - Invalid constant value - lib\screens\cart_screen.dart:144:62 - invalid_constant
+  error - The getter 'w750' isn't defined for the type 'FontWeight' - lib\screens\cart_screen.dart:144:73 - undefined_getter
+  error - Invalid constant value - lib\screens\cart_screen.dart:180:41 - invalid_constant
+  error - The getter 'w950' isn't defined for the type 'FontWeight' - lib\screens\cart_screen.dart:180:52 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\cart_screen.dart:214:35 - deprecated_member_use
+  error - The getter 'borderMedium' isn't defined for the type 'AppTheme' - lib\screens\cart_screen.dart:311:46 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\categories_screen.dart:199:91 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\categories_screen.dart:250:35 - deprecated_member_use
+  error - The getter 'borderMedium' isn't defined for the type 'AppTheme' - lib\screens\categories_screen.dart:333:81 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\chat_screen.dart:88:49 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\chat_screen.dart:243:48 - deprecated_member_use
+  error - Invalid constant value - lib\screens\edit_listing_screen.dart:77:45 - invalid_constant
+  error - The getter 'borderMedium' isn't defined for the type 'AppTheme' - lib\screens\edit_listing_screen.dart:77:54 - undefined_getter
+  error - The getter 'borderMedium' isn't defined for the type 'AppTheme' - lib\screens\edit_listing_screen.dart:161:77 - undefined_getter
+  error - The getter 'shadowSmall' isn't defined for the type 'AppTheme' - lib\screens\edit_listing_screen.dart:164:60 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\edit_listing_screen.dart:174:49 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\edit_listing_screen.dart:231:17 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\edit_listing_screen.dart:252:17 - deprecated_member_use
+  error - Invalid constant value - lib\screens\edit_listing_screen.dart:330:85 - invalid_constant
+  error - The getter 'w950' isn't defined for the type 'FontWeight' - lib\screens\edit_listing_screen.dart:330:96 - undefined_getter
+  error - Missing concrete implementation of 'State.build' - lib\screens\home_screen.dart:25:7 - non_abstract_class_inherits_abstract_member
+  error - The name 'HomeContent' isn't a class - lib\screens\home_screen.dart:37:22 - creation_with_non_type
+  error - The name 'HomeContent' isn't a class - lib\screens\home_screen.dart:47:22 - creation_with_non_type
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home_screen.dart:144:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home_screen.dart:208:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home_screen.dart:228:43 - deprecated_member_use
+  error - The name 'LoginScreen' isn't a class - lib\screens\home_screen.dart:263:67 - creation_with_non_type
+  error - Expected to find ';' - lib\screens\home_screen.dart:379:77 - expected_token
+warning - Dead code - lib\screens\home_screen.dart:380:3 - dead_code
+  error - Expected an identifier - lib\screens\home_screen.dart:380:3 - missing_identifier
+  error - Expected to find ')' - lib\screens\home_screen.dart:380:3 - expected_token
+warning - The declaration 'build' isn't referenced - lib\screens\home_screen.dart:381:10 - unused_element
+  error - Classes can't be declared inside other classes - lib\screens\home_screen.dart:400:1 - class_in_class
+  error - Expected a class member - lib\screens\home_screen.dart:400:19 - expected_class_member
+   info - Missing type annotation - lib\screens\home_screen.dart:400:27 - strict_top_level_inference
+   info - The variable name 'StatefulWidget' isn't a lowerCamelCase identifier - lib\screens\home_screen.dart:400:27 - non_constant_identifier_names
+  error - Methods must have an explicit list of parameters - lib\screens\home_screen.dart:400:27 - missing_method_parameters
+  error - The name 'HomeContent' isn't a class - lib\screens\home_screen.dart:401:9 - creation_with_non_type
+  error - The getter 'key' isn't defined in a superclass of '_HomeScreenState' - lib\screens\home_screen.dart:401:28 - undefined_super_member
+  error - State isn't a type - lib\screens\home_screen.dart:404:3 - not_a_type
+  error - The name 'HomeContent' isn't a type, so it can't be used as a type argument - lib\screens\home_screen.dart:404:9 - non_type_as_type_argument
+warning - The declaration 'createState' isn't referenced - lib\screens\home_screen.dart:404:22 - unused_element
+  error - The method '_HomeContentState' isn't defined for the type '_HomeScreenState' - lib\screens\home_screen.dart:404:39 - undefined_method
+  error - Classes can't be declared inside other classes - lib\screens\home_screen.dart:407:1 - class_in_class
+  error - Expected a class member - lib\screens\home_screen.dart:407:25 - expected_class_member
+   info - Missing type annotation - lib\screens\home_screen.dart:407:33 - strict_top_level_inference
+   info - The variable name 'State' isn't a lowerCamelCase identifier - lib\screens\home_screen.dart:407:33 - non_constant_identifier_names
+  error - Methods must have an explicit list of parameters - lib\screens\home_screen.dart:407:33 - missing_method_parameters
+   info - The local variable '_bannerController' starts with an underscore - lib\screens\home_screen.dart:408:24 - no_leading_underscores_for_local_identifiers
+   info - The local variable '_bannerPage' starts with an underscore - lib\screens\home_screen.dart:409:7 - no_leading_underscores_for_local_identifiers
+   info - The local variable '_bannerTimer' starts with an underscore - lib\screens\home_screen.dart:410:10 - no_leading_underscores_for_local_identifiers
+  error - Can't have modifier 'static' here - lib\screens\home_screen.dart:413:3 - extraneous_modifier
+   info - The local variable '_buyerBanners' starts with an underscore - lib\screens\home_screen.dart:413:42 - no_leading_underscores_for_local_identifiers
+  error - Can't have modifier 'static' here - lib\screens\home_screen.dart:431:3 - extraneous_modifier
+   info - The local variable '_sellerBanners' starts with an underscore - lib\screens\home_screen.dart:431:42 - no_leading_underscores_for_local_identifiers
+warning - The declaration 'initState' isn't referenced - lib\screens\home_screen.dart:450:8 - unused_element
+  error - Local variable '_startBannerTimer' can't be referenced before it is declared - lib\screens\home_screen.dart:452:5 - referenced_before_declaration
+   info - The local variable '_startBannerTimer' starts with an underscore - lib\screens\home_screen.dart:455:8 - no_leading_underscores_for_local_identifiers
+warning - The declaration 'dispose' isn't referenced - lib\screens\home_screen.dart:470:8 - unused_element
+warning - The declaration 'build' isn't referenced - lib\screens\home_screen.dart:477:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home_screen.dart:578:49 - deprecated_member_use
+  error - Local variable '_buildBannerSlide' can't be referenced before it is declared - lib\screens\home_screen.dart:616:32 - referenced_before_declaration
+  error - The getter 'borderDark' isn't defined for the type 'AppTheme' - lib\screens\home_screen.dart:635:42 - undefined_getter
+  error - Local variable '_buildCategoryItem' can't be referenced before it is declared - lib\screens\home_screen.dart:678:25 - referenced_before_declaration
+  error - Local variable '_buildCategoryItem' can't be referenced before it is declared - lib\screens\home_screen.dart:680:25 - referenced_before_declaration
+  error - Local variable '_buildCategoryItem' can't be referenced before it is declared - lib\screens\home_screen.dart:682:25 - referenced_before_declaration
+  error - Local variable '_buildCategoryItem' can't be referenced before it is declared - lib\screens\home_screen.dart:684:25 - referenced_before_declaration
+  error - Local variable '_buildCategoryItem' can't be referenced before it is declared - lib\screens\home_screen.dart:686:25 - referenced_before_declaration
+  error - Local variable '_buildProductSection' can't be referenced before it is declared - lib\screens\home_screen.dart:698:30 - referenced_before_declaration
+  error - Local variable '_buildProductSection' can't be referenced before it is declared - lib\screens\home_screen.dart:709:30 - referenced_before_declaration
+  error - Local variable '_buildProductSection' can't be referenced before it is declared - lib\screens\home_screen.dart:722:30 - referenced_before_declaration
+   info - The local variable '_buildBannerSlide' starts with an underscore - lib\screens\home_screen.dart:736:10 - no_leading_underscores_for_local_identifiers
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home_screen.dart:774:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home_screen.dart:792:41 - deprecated_member_use
+   info - The local variable '_buildCategoryItem' starts with an underscore - lib\screens\home_screen.dart:809:10 - no_leading_underscores_for_local_identifiers
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home_screen.dart:833:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home_screen.dart:836:36 - deprecated_member_use
+  error - Invalid constant value - lib\screens\home_screen.dart:851:27 - invalid_constant
+  error - The getter 'w750' isn't defined for the type 'FontWeight' - lib\screens\home_screen.dart:851:38 - undefined_getter
+   info - The local variable '_buildProductSection' starts with an underscore - lib\screens\home_screen.dart:860:10 - no_leading_underscores_for_local_identifiers
+  error - Local variable '_buildProductCard' can't be referenced before it is declared - lib\screens\home_screen.dart:911:30 - referenced_before_declaration
+   info - The local variable '_buildProductCard' starts with an underscore - lib\screens\home_screen.dart:920:10 - no_leading_underscores_for_local_identifiers
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home_screen.dart:936:35 - deprecated_member_use
+  error - The getter 'borderMedium' isn't defined for the type 'AppTheme' - lib\screens\home_screen.dart:996:81 - undefined_getter
+  error - Expected to find '}' - lib\screens\home_screen.dart:1015:1 - expected_token
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\login_screen.dart:332:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\messages_screen.dart:42:95 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\messages_screen.dart:85:49 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\my_listings_screen.dart:44:84 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\my_listings_screen.dart:79:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\my_listings_screen.dart:187:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\my_listings_screen.dart:189:72 - deprecated_member_use
+  error - The getter 'borderMedium' isn't defined for the type 'AppTheme' - lib\screens\my_listings_screen.dart:213:62 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\my_listings_screen.dart:254:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\my_listings_screen.dart:256:64 - deprecated_member_use
+  error - Undefined name 'Main' - lib\screens\notifications_screen.dart:112:42 - undefined_identifier
+  error - Expected to find ')' - lib\screens\notifications_screen.dart:112:47 - expected_token
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\notifications_screen.dart:140:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\notifications_screen.dart:169:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\notifications_screen.dart:174:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\notifications_screen.dart:179:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\notifications_screen.dart:191:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\orders_screen.dart:140:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\orders_screen.dart:171:69 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\orders_screen.dart:171:102 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\orders_screen.dart:235:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\orders_screen.dart:266:69 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\orders_screen.dart:266:106 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\product_details_screen.dart:79:55 - deprecated_member_use
+  error - The getter 'shadowMedium' isn't defined for the type 'AppTheme' - lib\screens\product_details_screen.dart:82:55 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\product_details_screen.dart:96:59 - deprecated_member_use
+  error - The getter 'shadowMedium' isn't defined for the type 'AppTheme' - lib\screens\product_details_screen.dart:99:59 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\product_details_screen.dart:125:59 - deprecated_member_use
+  error - The getter 'shadowMedium' isn't defined for the type 'AppTheme' - lib\screens\product_details_screen.dart:128:59 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\product_details_screen.dart:152:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\product_details_screen.dart:154:70 - deprecated_member_use
+  error - Invalid constant value - lib\screens\product_details_screen.dart:234:76 - invalid_constant
+  error - The getter 'borderMedium' isn't defined for the type 'AppTheme' - lib\screens\product_details_screen.dart:234:85 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\product_details_screen.dart:320:41 - deprecated_member_use
+  error - Invalid constant value - lib\screens\product_details_screen.dart:386:68 - invalid_constant
+  error - The getter 'w750' isn't defined for the type 'FontWeight' - lib\screens\product_details_screen.dart:386:79 - undefined_getter
+  error - Invalid constant value - lib\screens\product_details_screen.dart:420:47 - invalid_constant
+  error - The getter 'w950' isn't defined for the type 'FontWeight' - lib\screens\product_details_screen.dart:420:58 - undefined_getter
+  error - Invalid constant value - lib\screens\product_details_screen.dart:503:47 - invalid_constant
+  error - The getter 'w950' isn't defined for the type 'FontWeight' - lib\screens\product_details_screen.dart:503:58 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\profile_screen.dart:174:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\profile_screen.dart:187:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\profile_screen.dart:208:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\profile_screen.dart:377:28 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\register_screen.dart:204:82 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\register_screen.dart:254:83 - deprecated_member_use
+  error - The getter 'borderMedium' isn't defined for the type 'AppTheme' - lib\screens\search_screen.dart:132:56 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\search_screen.dart:135:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\search_screen.dart:171:84 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\search_screen.dart:218:35 - deprecated_member_use
+  error - Invalid constant value - lib\screens\sell_screen.dart:65:45 - invalid_constant
+  error - The getter 'borderMedium' isn't defined for the type 'AppTheme' - lib\screens\sell_screen.dart:65:54 - undefined_getter
+  error - The getter 'borderMedium' isn't defined for the type 'AppTheme' - lib\screens\sell_screen.dart:152:77 - undefined_getter
+  error - The getter 'shadowSmall' isn't defined for the type 'AppTheme' - lib\screens\sell_screen.dart:155:60 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\sell_screen.dart:165:49 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\sell_screen.dart:222:17 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\sell_screen.dart:243:17 - deprecated_member_use
+  error - Invalid constant value - lib\screens\sell_screen.dart:328:85 - invalid_constant
+  error - The getter 'w950' isn't defined for the type 'FontWeight' - lib\screens\sell_screen.dart:328:96 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\settings_screen.dart:279:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\settings_screen.dart:313:35 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor or activeTrackColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\screens\settings_screen.dart:323:7 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\settings_screen.dart:324:42 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\splash_screen.dart:44:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\splash_screen.dart:47:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\splash_screen.dart:77:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\splash_screen.dart:87:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\splash_screen.dart:104:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\wishlist_screen.dart:40:91 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\wishlist_screen.dart:88:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\wishlist_screen.dart:145:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\theme\app_theme.dart:50:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\theme\app_theme.dart:58:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\theme\app_theme.dart:66:26 - deprecated_member_use
+   info - 'background' is deprecated and shouldn't be used. Use surface instead. This feature was deprecated after v3.18.0-0.1.pre - lib\theme\app_theme.dart:82:9 - deprecated_member_use
+  error - The argument type 'CardTheme' can't be assigned to the parameter type 'CardThemeData?'.  - lib\theme\app_theme.dart:151:18 - argument_type_not_assignable
+
