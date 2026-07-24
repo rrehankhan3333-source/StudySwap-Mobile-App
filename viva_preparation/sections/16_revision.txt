@@ -1,0 +1,48 @@
+# PART 16: INTERVIEW STYLE REVISION & SUMMARY
+
+This chapter serves as a rapid overview checklist for the final minutes before the viva.
+
+## 1. Quick Definitions Checklist
+- Stream: An asynchronous sequence of data events (e.g. Firestore snapshots).
+- Future: A computation that returns a single result asynchronously (e.g. Firebase sign-in).
+- Batch: Atomically groups multiple write operations (set, update, delete) to execute in a single round-trip call.
+- Transaction: A series of reads and writes that execute atomically and retry if a conflicts arise.
+- Denormalization: Duplicating data (e.g. embedding product details inside orders) to speed up queries.
+- ValueListenableBuilder: Rebuilds its child widget tree dynamically when a watched notifier changes value.
+
+---
+
+## 2. Key Technology Statistics
+- Backend Database: Cloud Firestore (NoSQL, document-oriented).
+- File Storage: Firebase Storage (binary storage, bucket architecture).
+- Security: Firebase Authentication (email-based credentials management).
+- State Management: Centralized `AppState.dart` using global `ValueNotifiers`.
+- Platform support: Configured to support both Android and iOS devices, and Web compilation options.
+
+---
+
+## 3. Top 5 Common Student Mistakes in Viva
+1. Confusion between get() and snapshots():
+   * Mistake: Explaining `get()` as real-time, or stating `snapshots()` is a single read.
+   * Correction: Remember `get()` reads once. `snapshots()` returns a real-time stream.
+2. Mixing setState() and ValueNotifier:
+   * Mistake: Stating `ValueNotifier` forces the whole screen to redraw.
+   * Correction: `ValueNotifier` rebuilds only the scoped widget tree inside `ValueListenableBuilder`.
+3. Inability to explain Checkout logic:
+   * Mistake: Not knowing that stock changes happen atomicly via database batches.
+   * Correction: Be ready to explain the write batch transaction in detail.
+4. Not knowing where images are stored:
+   * Mistake: Saying listing images are saved inside Firestore collections.
+   * Correction: Listing images live in Firebase Storage. Only their download URLs are saved in Firestore.
+5. Inability to explain how user roles are managed:
+   * Mistake: Stating roles are configured inside Firebase Authentication panel properties.
+   * Correction: Firebase Authentication only manages credentials. We save the `accountType` field in the user's Firestore document.
+
+---
+
+## 4. Final Five-Minute Viva Checklist
+- Run `flutter analyze` locally to ensure there are no compilation errors.
+- Verify your database connection config files are current.
+- Refresh your understanding of client-side validation logic for registration.
+- Review the checkout write-batch flow.
+- Remember: the primary color of StudySwap is Indigo/Royal Violet.

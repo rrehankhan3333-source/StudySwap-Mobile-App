@@ -1,0 +1,110 @@
+# PART 3: FIRESTORE DATABASE DESIGN
+
+## 1. Physical Collections & NoSQL Hierarchy
+StudySwap contains 7 primary collections inside Cloud Firestore. The collections represent decoupled logical entities structured as follows:
+
+| Collection ID | Document ID Scheme | Database Relationships | Primary Screen(s) utilizing it |
+| users | Firebase Auth User UID | One-to-One with Auth User | profile_screen, login, register |
+| products | Auto-Timestamp String | One-to-Many via sellerId | sell_screen, detail_screen, home |
+| orders | Auto-generated ID | Many-to-One via buyerId & sellerId | orders_screen, dashboard, analytics |
+| savedItems | `${uid}_${productId}` | Junction table userId <-> productId | wishlist_screen, detail_screen |
+| cart | `${uid}_${productId}` | Junction table buyerId <-> productId | cart_screen, detail_screen |
+| conversations | Auto-generated ID | Array participants: [buyer, seller] | messages_screen, chat_screen |
+| notifications | Auto-generated ID | Many-to-One via userId | notifications_screen, home_screen |
+
+---
+
+## 2. Collection Schema Details
+
+### A. Collection: `users`
+- Purpose: Stores profiles, name details, contact numbers, and access rights.
+- Document ID: The user's Firebase Auth `UID`.
+- Schema Fields:
+  * `uid` (String): Unique identifier.
+  * `fullName` (String): Display name of student.
+  * `email` (String): CUI academic address.
+  * `phone` (String): Cell number for exchange coordinates.
+  * `accountType` (String): User role, either `'Buyer'` or `'Seller'`.
+  * `profileImage` (String): URL of the uploaded image in Storage.
+  * `createdAt` (Timestamp): Timestamp when profile was built.
+
+### B. Collection: `products`
+- Purpose: Active catalog listing of study resources on the market.
+- Document ID: Unique epoch timestamp milliseconds string (e.g. `1784827419`).
+- Schema Fields:
+  * `title` (String): Product title.
+  * `price` (Double): Selling price.
+  * `imageUrl` (String): HTTP link to image file/mock resource.
+  * `category` (String): Academic filter (e.g., `'Books'`).
+  * `condition` (String): Usage state indicator (e.g., `'Like New'`).
+  * `description` (String): Listing details notes.
+  * `sellerName` (String): Display name of listing author.
+  * `sellerId` (String): UID of listing owner.
+  * `rating` (Double): Default 4.5.
+  * `reviewsCount` (Int): Default 12.
+  * `isSold` (Boolean): Flag defining if item is sold.
+  * `stock` (Int): Active stock quantity (>= 0).
+  * `status` (String): Status code of item (`'active'` or `'inactive'`).
+  * `createdAt` (Timestamp): Server timestamp of creation.
+
+### C. Collection: `orders`
+- Purpose: Tracks order history, quantities, completion, and financial summaries.
+- Document ID: Auto-generated string.
+- Schema Fields:
+  * `buyerId` (String): UID of the purchasing student.
+  * `buyerName` (String): Name of the buyer.
+  * `sellerId` (String): UID of listing owner.
+  * `sellerName` (String): Name of the seller.
+  * `productId` (String): ID of the product.
+  * `price` (Double): Price of the transaction.
+  * `quantity` (Int): Quantity of items purchased.
+  * `status` (String): Fulfillment status (`'Pending'`, `'Shipped'`, `'Delivered'`, `'Cancelled'`).
+  * `purchaseDate` (Timestamp): Order date.
+  * `createdAt` (Timestamp): Creation server timestamp.
+  * `completedAt` (Timestamp): Delivery completion server timestamp.
+  * `product` (Nested Map): Snapshot of product data `{id, title, imageUrl, category, condition, description}`.
+
+### D. Collection: `savedItems` (Wishlist)
+- Purpose: Serves as a junction collection matching users to their saved listings.
+- Document ID: `${uid}_${productId}` (Ensures a user saves a listing only once. Tabbing favorite deletes the doc or creates it).
+- Schema Fields:
+  * `userId` (String): UID of interest participant.
+  * `productId` (String): ID of liked product.
+  * `savedAt` (Timestamp): Timestamp of click.
+
+### E. Collection: `cart`
+- Purpose: Holds active item queues for target buyers before checkouts.
+- Document ID: `${uid}_${productId}` (Combines buyer ID and product ID, ensuring quantity increments rather than multiple docs).
+- Schema Fields:
+  * `buyerId` (String): Target purchaser UID.
+  * `productId` (String): ID of product.
+  * `quantity` (Int): Total item counts to buy.
+  * `productTitle` / `productPrice` / `productImageUrl` (Strings): Sharded product metadata fields.
+  * `productSellerId` (String): UID of seller.
+
+### F. Collection: `conversations`
+- Purpose: Tracks dialog channels between unique buyer/seller pairs on listings.
+- Document ID: Auto-generated string.
+- Schema Fields:
+  * `participants` (Array of Strings): Holds `[buyerId, sellerId]`.
+  * `buyerId` (String): Buyer UID.
+  * `sellerId` (String): Seller UID.
+  * `buyerName` / `sellerName` (String): Display names.
+  * `productId` (String): Reference item.
+  * `productTitle` / `productImageUrl` (String): Reference details.
+  * `lastMessage` (String): Preview snippet of chat.
+  * `lastMessageTime` (Timestamp): Timestamp of last active sentence.
+  * `unreadCount` (Map): Map containing `{buyerId: count, sellerId: count}`.
+
+### G. Collection: `notifications`
+- Purpose: Serves system, messaging, and sales alerts.
+- Document ID: Auto-generated ID.
+- Schema Fields:
+  * `notificationId` (String): Self document ID.
+  * `userId` (String): Target profile UID.
+  * `title` (String): Bold header description.
+  * `body` (String): Details message.
+  * `type` (String): `'Messages'`, `'Sales'`, or `'System'`.
+  * `relatedId` (String): Optional target reference document ID.
+  * `isRead` (Boolean): Boolean flag for notification read status.
+  * `timestamp` (Timestamp): Creation server timestamp.

@@ -1,0 +1,48 @@
+# PART 11: STATE MANAGEMENT & APPSTATE LIFE CYCLES
+
+StudySwap organizes its business logic, database queries, and notifications into a single centralized state manager: `AppState.dart` (`lib/state/app_state.dart`).
+
+## 1. Why AppState instead of Provider or Bloc?
+- Simplicity and Readability: Using custom `ValueNotifiers` inside a vanilla class maps directly to native Flutter APIs without third-party dependencies.
+- Single Source of Truth: Allows centralized management of authentication states, visual assets, shopping queues, and customer orders.
+- Optimized performance: We subscribe to Firestore listeners once when the user authenticates, and cancel them when they log out. This prevents memory leaks and unnecessary database reads.
+
+---
+
+## 2. In-Memory Notifiers (State Holders)
+`AppState` defines and stores states inside `ValueListenable` objects:
+- `userRoleNotifier` (ValueNotifier<String>): Holds the current user role (`'Buyer'` or `'Seller'`).
+- `productsNotifier` (ValueNotifier<List<Product>>): Active catalog data list.
+- `cartNotifier` (ValueNotifier<List<CartItem>>): Cart items list.
+- `wishlistNotifier` (ValueNotifier<List<Product>>): Saved items list.
+- `buyerOrdersNotifier` / `sellerReceivedOrdersNotifier` (ValueNotifier<List<OrderModel>>): Respective purchase order logs.
+- `conversationsNotifier` (ValueNotifier<List<Conversation>>): Chat channels list.
+- `notificationsNotifier` (ValueNotifier<List<AppNotification>>): Active user alerts.
+- `numNotificationsNotifier` (ValueNotifier<int>): Number of unread notifications.
+
+---
+
+## 3. Subscription Management Lifecycle
+The lifecycle of state subscriptions follows these transitions:
+
+1. Initialization (`AppState.init()`):
+   - Listens to authentication state changes:
+     `_auth.authStateChanges().listen((User? user) { ... })`
+   - If a user session is active, it coordinates subscriptions for their `uid` using `_setupAllSubscriptions(user.uid)`.
+   - If no user is logged in, it calls `_clearAllSubscriptions()` to wipe the local state cache.
+
+2. Connecting Subscriptions (`_setupAllSubscriptions(uid)`):
+   - Opens persistent stream listeners for all collections, updating the corresponding `ValueNotifiers` with the received data:
+     * User metadata listener.
+     * Active products list listener.
+     * Saved items list listener.
+     * Cart items list listener.
+     * Buyer/Seller orders listener.
+     * Conversations inbox listener.
+     * Notifications inboxes listener.
+
+3. Disconnecting Subscriptions (`_clearAllSubscriptions()`):
+   - Closes and destroys all active stream subscriptions using `.cancel()`:
+     `_userSubscription?.cancel(); _productsSubscription?.cancel(); ...`
+   - Resets all local list parameters to empty state.
+   - Clears memory cache.

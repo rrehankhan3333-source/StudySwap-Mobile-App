@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_theme.dart';
 import '../state/app_state.dart';
 
@@ -92,7 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.lock_outline_rounded,
                     title: "Change Password",
                     trailing: Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppTheme.textMedium),
-                    onTap: () => _showDialog(context, "Change Password", "Allows updating credentials."),
+                    onTap: () => _showChangePasswordDialog(),
                   ),
                   Container(height: 1.5, color: AppTheme.borderMedium),
                   _buildSettingsItem(
@@ -358,6 +359,256 @@ class _SettingsScreenState extends State<SettingsScreen> {
       activeColor: AppTheme.primary,
       activeTrackColor: AppTheme.primary.withOpacity(0.15),
       onChanged: onChanged,
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    final formKey = GlobalKey<FormState>();
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    bool obscureCurrent = true;
+    bool obscureNew = true;
+    bool obscureConfirm = true;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).viewInsets.bottom + 32),
+              decoration: BoxDecoration(
+                color: AppTheme.bgCard,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(28),
+                  topRight: Radius.circular(28),
+                ),
+                boxShadow: AppTheme.premiumShadow,
+              ),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 44,
+                          height: 4.5,
+                          decoration: BoxDecoration(
+                            color: AppTheme.borderMedium,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        "Change Password",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.textDark,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        "Please verify your current password to continue.",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textMedium,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Current Password
+                      TextFormField(
+                        controller: currentPasswordController,
+                        obscureText: obscureCurrent,
+                        style: TextStyle(color: AppTheme.textDark),
+                        decoration: InputDecoration(
+                          labelText: "Current Password",
+                          prefixIcon: Icon(Icons.lock_rounded, color: AppTheme.primary, size: 20),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              obscureCurrent ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                              color: AppTheme.textMedium,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              setModalState(() {
+                                obscureCurrent = !obscureCurrent;
+                              });
+                            },
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Please enter your current password";
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 18),
+
+                      // New Password
+                      TextFormField(
+                        controller: newPasswordController,
+                        obscureText: obscureNew,
+                        style: TextStyle(color: AppTheme.textDark),
+                        decoration: InputDecoration(
+                          labelText: "New Password",
+                          prefixIcon: Icon(Icons.lock_outline_rounded, color: AppTheme.secondary, size: 20),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              obscureNew ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                              color: AppTheme.textMedium,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              setModalState(() {
+                                obscureNew = !obscureNew;
+                              });
+                            },
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Please enter a new password";
+                          }
+                          if (value.length < 8) {
+                            return "Password must be at least 8 characters long";
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Confirm Password
+                      TextFormField(
+                        controller: confirmPasswordController,
+                        obscureText: obscureConfirm,
+                        style: TextStyle(color: AppTheme.textDark),
+                        decoration: InputDecoration(
+                          labelText: "Confirm New Password",
+                          prefixIcon: Icon(Icons.shield_outlined, color: AppTheme.accent, size: 20),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              obscureConfirm ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                              color: AppTheme.textMedium,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              setModalState(() {
+                                obscureConfirm = !obscureConfirm;
+                              });
+                            },
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Please confirm your new password";
+                          }
+                          if (value != newPasswordController.text) {
+                            return "Passwords do not match";
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Save button
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: () async {
+                          if (formKey.currentState!.validate()) {
+                            Navigator.pop(context);
+                            
+                            // Show loading indicator
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Text("Updating password...", style: TextStyle(color: Colors.white)),
+                                  ],
+                                ),
+                                backgroundColor: AppTheme.primary,
+                                duration: const Duration(minutes: 1),
+                              ),
+                            );
+
+                            try {
+                              final user = AppState.currentUser;
+                              if (user == null || user.email == null) {
+                                throw "No active authenticated session found.";
+                              }
+                              
+                              // Reauthenticate
+                              final credential = EmailAuthProvider.credential(
+                                email: user.email!,
+                                password: currentPasswordController.text,
+                              );
+                              
+                              await user.reauthenticateWithCredential(credential);
+                              await user.updatePassword(newPasswordController.text);
+
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).clearSnackBars();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text("Password updated successfully."),
+                                    backgroundColor: AppTheme.successColor,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).clearSnackBars();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("Error updating password: $e"),
+                                    backgroundColor: Colors.redAccent.shade700,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            }
+                          }
+                        },
+                        child: const Text(
+                          "Update Password",
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

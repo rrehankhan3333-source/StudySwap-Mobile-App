@@ -215,60 +215,100 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         iconBg = const Color(0xffF0F9FF);
     }
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.bgCard, 
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.borderMedium, width: 1.5),
-        boxShadow: AppTheme.shadowSmall,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 40,
-            width: 40,
-            decoration: BoxDecoration(
-              color: iconBg,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppTheme.borderMedium, width: 1.0),
-            ),
-            child: Icon(icon, color: iconColor, size: 18),
+    final isUnread = !notif.isRead;
+
+    return GestureDetector(
+      onTap: () {
+        if (isUnread) {
+          AppState.markNotificationAsRead(notif.id);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isUnread
+              ? (AppTheme.isDarkMode ? const Color(0xff2D3748) : const Color(0xffEEF2F6))
+              : AppTheme.bgCard,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isUnread ? AppTheme.primary : AppTheme.borderMedium,
+            width: 1.5,
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        notif.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textDark, letterSpacing: -0.2),
+          boxShadow: AppTheme.shadowSmall,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 40,
+              width: 40,
+              decoration: BoxDecoration(
+                color: iconBg,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppTheme.borderMedium, width: 1.0),
+              ),
+              child: Icon(icon, color: iconColor, size: 18),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          notif.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: isUnread ? FontWeight.w900 : FontWeight.bold,
+                            fontSize: 13,
+                            color: AppTheme.textDark,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
                       ),
+                      const SizedBox(width: 8),
+                      Text(
+                        notif.time,
+                        style: TextStyle(
+                          color: isUnread ? AppTheme.primary : AppTheme.textLight,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    notif.body,
+                    style: TextStyle(
+                      color: isUnread ? AppTheme.textDark : AppTheme.textMedium,
+                      fontSize: 12.5,
+                      fontWeight: isUnread ? FontWeight.bold : FontWeight.w500,
+                      height: 1.4,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      notif.time,
-                      style: TextStyle(color: AppTheme.textLight, fontSize: 10, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  notif.body,
-                  style: TextStyle(color: AppTheme.textMedium, fontSize: 12.5, fontWeight: FontWeight.w500, height: 1.4),
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            if (isUnread) ...[
+              const SizedBox(width: 8),
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: AppTheme.primary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'register_screen.dart';
@@ -26,6 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordValid = true; // Pre-filled value is valid initially
 
   String? _roleError;
+  bool _isLoading = false;
 
   void _validateEmail(String value) {
     final trimmed = value.trim();
@@ -411,7 +414,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       boxShadow: AppTheme.buttonShadow,
                     ),
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: _isLoading ? null : () async {
                         _validateEmail(_emailController.text);
                         _validatePassword(_passwordController.text);
 
@@ -429,30 +432,70 @@ class _LoginScreenState extends State<LoginScreen> {
                           return;
                         }
 
-                        // Apply Selected Role and fields to State
-                        AppState.userRoleNotifier.value = _selectedRole;
-                        if (_selectedRole == "Buyer") {
-                          AppState.nameNotifier.value = "Rehan Khan";
-                          AppState.emailNotifier.value = _emailController.text.isNotEmpty 
-                              ? _emailController.text 
-                              : "rehan.khan@example.com";
-                        } else {
-                          AppState.nameNotifier.value = "John Seller";
-                          AppState.emailNotifier.value = _emailController.text.isNotEmpty 
-                              ? _emailController.text 
-                              : "john.seller@example.com";
+                        setState(() {
+                          _isLoading = true;
+                        });
+
+                        try {
+                          final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+                            email: _emailController.text.trim(),
+                            password: _passwordController.text,
+                          );
+
+                          final user = credential.user;
+                          if (user != null) {
+                            final userDoc = await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .get();
+
+                            if (userDoc.exists) {
+                              final dbRole = userDoc.data()?['accountType'] ?? 'Buyer';
+                              AppState.userRoleNotifier.value = dbRole;
+
+                              if (mounted) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
+                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                      return FadeTransition(opacity: animation, child: child);
+                                    },
+                                    transitionDuration: const Duration(milliseconds: 500),
+                                  ),
+                                );
+                              }
+                            } else {
+                              throw Exception("User profile not found in database.");
+                            }
+                          }
+                        } on FirebaseAuthException catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(e.message ?? "Incorrect email or password."),
+                                backgroundColor: Colors.redAccent,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Error: ${e.toString()}"),
+                                backgroundColor: Colors.redAccent,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _isLoading = false;
+                            });
+                          }
                         }
-                        
-                        Navigator.pushReplacement(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
-                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                              return FadeTransition(opacity: animation, child: child);
-                            },
-                            transitionDuration: const Duration(milliseconds: 500),
-                          ),
-                        );
                       },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
@@ -461,14 +504,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         backgroundColor: AppTheme.primary,
                         elevation: 0,
                       ),
-                      child: const Text(
-                        "Sign In",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.2,
+                              ),
+                            )
+                          : const Text(
+                              "Sign In",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                     ),
                   ),
                 ),

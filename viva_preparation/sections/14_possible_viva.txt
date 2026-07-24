@@ -1,0 +1,185 @@
+# PART 14: POSSIBLE VIVA QUESTIONS & COMPLETE ANSWERS
+
+Here is the breakdown of 85 targeted viva questions with answers based on StudySwap.
+
+## 1. Firebase & General Backend Integration
+1. Q: What backend services did you use inside StudySwap?
+   A: Firebase Authentication, Cloud Firestore (database), and Cloud Firebase Storage.
+2. Q: Why did you choose Firebase over MySQL or MongoDB?
+   A: Firebase provides real-time web-sockets support (snapshots) out-of-the-box, requires no server hosting, and integrates with Flutter.
+3. Q: How does Flutter connect with Firestore?
+   A: Via the official packages `firebase_core` and `cloud_firestore`. Initialization happens using `Firebase.initializeApp()` in `main.dart`.
+4. Q: How does the application identify which user is currently logged in?
+   A: Using `FirebaseAuth.instance.currentUser`, which returns a user object containing their unique `uid`.
+5. Q: Where do you store the user's role (Buyer/Seller)?
+   A: In a document under the `users` collection in Cloud Firestore, using the user's `uid` as the document ID.
+6. Q: How do you protect database operations?
+   A: Users must authenticate. The app enforces role checks (Buyer vs. Seller) in state controllers and applies Firestore Security Rules on the backend.
+7. Q: What is the difference between Document Database and Relational Database?
+   A: Document databases store data as JSON-like documents (NoSQL), whereas relational databases store data in tables with rows and columns (SQL).
+8. Q: How does Firestore organize data?
+   A: Into Collections (folders) containing Documents (JSON files), which can contain nested subcollections.
+9. Q: Is Firestore a SQL or NoSQL database?
+   A: NoSQL. It stores collections of documents rather than tables with rows and columns.
+10. Q: What is the maximum size allowed for a single Firestore document?
+    A: 1 Megabyte (1MB).
+11. Q: Why did you not store raw images directly inside Firestore?
+    A: Firestore documents are capped at 1MB. Instead, we upload images to Firebase Storage and save their HTTPS download URLs in Firestore.
+12. Q: What is a Firestore Batch?
+    A: A collection of write operations (set, update, delete) that executes atomically. If one fails, the entire batch rolls back.
+13. Q: Why did you use a batch write for checkout in StudySwap?
+    A: Checkout requires multiple updates: creating orders, decrementing stock, and clearing the cart. Using a batch ensures atomic consistency.
+14. Q: What happens if checkout fails mid-way?
+    A: Since we use a write batch, no changes are committed to the database, preventing inconsistent states.
+15. Q: What is the difference between set() and update()?
+    A: `set()` overwrites the entire document (or creates a new one). `update()` modifies only the specified fields of an existing document.
+16. Q: What happens when trying to update() a document that does not exist?
+    A: Firestore throws a FirebaseException.
+17. Q: How does your app generate unique document IDs?
+    A: Calling `.doc()` without arguments on a collection reference generates a unique 20-character alphanumeric ID client-side.
+18. Q: What type of query filters does Firestore support?
+    A: Range and equality operators using `.where()`, sorting using `.orderBy()`, and limiters using `.limit()`.
+
+## 2. Authentication and Role Flows
+19. Q: How do you handle account creation in Firebase?
+    A: We call `createUserWithEmailAndPassword(email, password)` and then write the user's metadata to Firestore.
+20. Q: How is client validation configured for registration?
+    A: We use a Flutter `Form` with a `GlobalKey<FormState>`. Each `TextFormField` has validation logic for formats, lengths, and matches.
+21. Q: How do you handle passwords securely?
+    A: Firebase Authentication manages encryption and storage on the server side. Passwords are never stored in raw text in our database.
+22. Q: How does a user change their password?
+    A: We call `await FirebaseAuth.instance.currentUser?.updatePassword(newPassword)`.
+23. Q: What is password reset flow?
+    A: We call `await FirebaseAuth.instance.sendPasswordResetEmail(email: email)`.
+24. Q: How is a Buyer's home navigation page different from a Seller's?
+    A: Both share the browse page, but Sellers have a "Dashboard" option in the side drawer to access the Seller Hub.
+25. Q: How does role-based routing work during app launch?
+    A: `AppState` retrieves the authenticated user's profile document from Firestore, reads the `accountType` field, and routes them accordingly.
+26. Q: What packages did you use for picking local images?
+    A: `file_picker`.
+27. Q: Why did you use file_picker instead of image_picker?
+    A: `file_picker` works reliably across both mobile and web without configuration issues.
+
+## 3. Realtime Messaging & Chat Screen
+28. Q: How are conversations structured in Firestore?
+    A: In a root `conversations` collection, where each document has a nested `messages` subcollection.
+29. Q: How is a conversation uniquely identified between a buyer and seller?
+    A: We query the `conversations` collection for a document matching the buyer ID, seller ID, and product ID.
+30. Q: How does real-time chat update the UI?
+    A: The chat screen maps the stream of snapshots from the `messages` collection to a list of messages.
+31. Q: Why does the chat listing show unread badges?
+    A: Each conversation document stores an `unreadCount` map. When a message is sent, the recipient's counter is incremented.
+32. Q: How is the unread badge cleared when a chat is opened?
+    A: We reset the current user's entry in the parent conversation's `unreadCount` map to 0.
+33. Q: Why did you store product metadata in conversation documents?
+    A: To display item thumbnails and titles in the chat list without executing additional database reads for each conversation.
+
+## 4. Seller Operations, Dashboard, & Custom Painters
+34. Q: How does a Seller upload a product?
+    A: By filling out the form in `SellScreen` and uploading the product image to Firebase Storage, then saving the metadata and URL in Firestore.
+35. Q: How does the Seller Dashboard fetch metrics?
+    A: It listens to the `orders` collection in real-time, filtering by `sellerId` and calculating metrics dynamically.
+36. Q: How is Total Revenue calculated on the dashboard?
+    A: By summing `price * quantity` for all orders with a status of `'Delivered'`.
+37. Q: What does the Analytics screen line chart display?
+    A: Dynamic daily revenue trends based on delivered order completion timestamps.
+38. Q: How is the trend chart rendered?
+    A: Using a `CustomPainter` to draw lines, grid grids, and dots on a canvas coordinate system.
+39. Q: How does the app update listing status when stock hits 0?
+    A: During checkout, if stock drops to 0, the write batch automatically updates `isSold` to `true` and the listing status to `'inactive'`.
+
+## 5. State Management & Lifecycle
+40. Q: What is the state management architecture of the application?
+    A: Decoupled global state management using a central `AppState` class containing `ValueNotifiers`.
+41. Q: Why use ValueNotifier instead of setState?
+    A: `setState` only triggers rebuilds within a single stateful widget. `ValueNotifier` broadcast updates globally.
+42. Q: What is the purpose of ValueListenableBuilder?
+    A: It listens to a `ValueNotifier` and rebuilds only its child widget subtree when the notifier's value changes.
+43. Q: How do you listen to user updates in real-time?
+    A: We listen to the user snapshot in Firestore and update the `nameNotifier`, `profileImage`, and other states immediately.
+44. Q: What occurs when AppState.signOut() is executed?
+    A: Cancels all Firestore stream subscriptions, clears local state, and signs out of Firebase Authentication.
+45. Q: Why is canceling subscriptions on logout critical?
+    A: Failing to cancel listeners before sign-out causes security rule errors and memory leaks.
+
+## 6. Widget Tree Architecture
+46. Q: What is the purpose of a Key in Flutter widgets?
+    A: Keys preserve widget state when they move around the widget tree.
+47. Q: What is the difference between Stateful and Stateless widgets?
+    A: Stateless widgets are static and redraw only when arguments change. Stateful widgets manage dynamic state locally.
+48. Q: When do you use StreamBuilder?
+    A: To listen to streams directly inside the widget tree (e.g. Chat messages subcollection stream).
+49. Q: What is the difference between Expanded and Flexible?
+    A: `Expanded` forces a widget to fill all remaining layout space. `Flexible` allows a widget to scale up to the remaining space.
+50. Q: Why is ListView.builder preferred over standard ListView?
+    A: `ListView.builder` creates items on-demand, recycling off-screen items to save memory.
+51. Q: What is the purpose of Hero widget?
+    A: It provides a shared transition animation when navigating between screens.
+52. Q: What package is used for local database persistence?
+    A: `shared_preferences` (used to persist settings like the active theme mode).
+53. Q: How do you implement dark mode statically?
+    A: By checking the boolean state of `darkModeNotifier` in `AppTheme` and applying target styles.
+54. Q: How does the application prevent duplicate product listings from overloading the database?
+    A: We enforce validation criteria on titles and descriptions before publishing.
+55. Q: What does FieldValue.serverTimestamp() resolve to?
+    A: A server-side timestamp representation, ensuring consistency regardless of client device time settings.
+56. Q: How do you handle error states when Firebase is offline?
+    A: Firestore caches data locally, allowing operations to queue offline and sync automatically when internet connectivity returns.
+57. Q: How does a buyer complete a purchase?
+    A: By pressing "Checkout" in the Cart screen, which triggers the atomic batch transaction.
+58. Q: How does a seller view active orders?
+    A: Under the orders tab on the Seller Dashboard screen.
+59. Q: How are notifications handled when an order status changes?
+    A: When the seller updates the order document status, the transaction appends an alert to the `notifications` collection.
+60. Q: How is a message marked as read?
+    A: The recipient opens the conversation doc, updating `isRead` to true for all incoming elements in the subcollection.
+61. Q: What are the main tabs in screen navigation?
+    A: Home, Wishlist, Cart, Messages, and Profile.
+62. Q: Can a seller buy their own items?
+    A: The UI prevents listing owners from adding their own items to the cart or checking out.
+63. Q: How does user role selection work during signup?
+    A: By tapping interactive cards on the registration screen, which sets the `accountType` variable.
+64. Q: How does the application display search results?
+    A: Using simple text queries against the titles in our local products list.
+65. Q: How is a user's phone number validated?
+    A: Standard regular expression checking in form inputs (expects 11 digits format).
+66. Q: What happens when an order status is marked as 'Delivered'?
+    A: The system logs the delivery timestamp, increments seller completed sales metrics, and updates dashboard charts.
+67. Q: Why did you choose 5MB as the image upload limit?
+    A: To prevent network lag and optimize Firestore document loading speeds.
+68. Q: How do you show loading screens during network operations?
+    A: By managing a boolean state (e.g., `_isPublishing = true`) and displaying a overlay modal containing a `CircularProgressIndicator`.
+69. Q: How is the total number of notifications displayed?
+    A: Via a red badge over the notification icon, driven by a `ValueListenableBuilder` listening to `numNotificationsNotifier`.
+70. Q: How do you handle file uploads on the Web?
+    A: By extracting image bytes from file picker outputs and uploading them as data URIs via `putData`.
+71. Q: What is the purpose of MaterialApp's routing layout?
+    A: Maps paths to pages dynamically.
+72. Q: What occurs when a product is marked as a favorite?
+    A: We write a document containing user and product references to the `savedItems` collection.
+73. Q: How is the category list structured on the home screen?
+    A: A horizontal list of chip-like items containing category names and icons.
+74. Q: How are recent seller transactions calculated?
+    A: The dashboard pulls the last 5 completed or pending transactions from the order model lists.
+75. Q: How does custom painter coordinate systems render graph points?
+    A: Maps revenue values to relative Y offsets, and days to X offsets on a canvas container.
+76. Q: Explain the difference between Stream and Future.
+    A: A `Future` returns a single asynchronous result once, whereas a `Stream` delivers multiple asynchronous events over time.
+77. Q: What is build context in Flutter?
+    A: BuildContext is a reference that defines where a widget sits in the widget tree.
+78. Q: What is the purpose of safe area?
+    A: Keeps your UI elements from being cut off by device hardware notches and screen bezels.
+79. Q: How does double.tryParse help in database validation?
+    A: Converts text to double, returning null if formatting fails, which helps validate price inputs.
+80. Q: Why is dispose method important?
+    A: Closes text controller instances and UI listeners to prevent memory leaks.
+81. Q: How is email format validated during signup?
+    A: Using regular expressions (`RegExp`) to ensure standard university email formats.
+82. Q: What does ScaffoldMessenger handle?
+    A: Displays temporary, context-aware notification banners (SnackBars) at the bottom of the screen.
+83. Q: How do you update listing stock?
+    A: In `MyListingsScreen`, tapping on an item opens `EditListingScreen` to submit changes.
+84. Q: Can buyers see sold items in search listings?
+    A: The product stream filters out products marked as sold (`isSold == true`) so they are hidden from search lists.
+85. Q: What is hot reload in Flutter?
+    A: Compiles updated code and updates the widget tree directly without restarting the application engine.

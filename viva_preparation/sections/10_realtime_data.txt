@@ -1,0 +1,38 @@
+# PART 10: REAL-TIME DATA ARCHITECTURE
+
+StudySwap leverages Firestore's real-time capabilities to update the UI instantly without manual refreshes.
+
+## 1. What is a Stream?
+A Stream is a source of asynchronous data events. Instead of executing a one-time request and waiting for a response, a Stream keeps the connection open and pushes new data events whenever a change occurs.
+
+---
+
+## 2. snapshots() vs get()
+- `get()`: Requests a single resource state once. It pulls data from the server (or cache), returns the results, and closes the connection.
+- `snapshots()`: Subscribes to a stream of query results. The server registers a listener on the matching data path and pushes a new query snapshot to the client device whenever a document is added, updated, or deleted.
+
+---
+
+## 3. Realtime Listener Hookup in app_state.dart
+During application initialization, `AppState` subscribes to real-time streams for all core collections:
+```dart
+_firestore.collection('products').snapshots().listen((prodSnapshot) {
+  final List<Product> list = prodSnapshot.docs.map((doc) {
+    return Product.fromFirestore(doc.data(), doc.id);
+  }).toList();
+  productsNotifier.value = list;
+});
+```
+Every time a seller adds a product or a buyer purchases an item, Firestore pushes a new `prodSnapshot`. The listener maps this snapshot to a list of `Product` objects and updates `productsNotifier.value`.
+
+---
+
+## 4. UI Rebuilds: ValueListenableBuilder vs StreamBuilder
+- `StreamBuilder`: Rebuilds its widget subtree whenever a stream emits a new event, but manages the subscription lifecycle directly within the widget tree.
+- `ValueListenableBuilder`: Listens to a `ValueNotifier` (which stores value changes inside our state manager).
+- Rationale: StudySwap uses `ValueListenableBuilder` tied to global `AppState` notifiers. This decouples our business logic from the UI layer. Only one global Firestore subscription is kept open in the background, rather than opening separate subscriptions on every screen, which optimizes performance and reduces Firestore read costs.
+- Rebuilding Mechanism:
+  1. Firestore data changes on the server.
+  2. The background Stream listener in `AppState` is triggered.
+  3. The listener updates the `ValueNotifier` value in memory.
+  4. The `ValueListenableBuilder` detects the notifier change and rebuilds the corresponding widget subtree.

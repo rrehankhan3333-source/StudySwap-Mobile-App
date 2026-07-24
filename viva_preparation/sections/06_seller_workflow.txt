@@ -1,0 +1,74 @@
+# PART 6: SELLER WORKFLOW & OPERATIONS
+
+This chapter outlines the logical and user-interactive sequence of events that characterize the study guide's Seller operations in StudySwap.
+
+## 1. Seller Login & Dashboard Routing
+- Login: Sellers input credentials in `login_screen.dart`. Upon success, the user role value notifier configures as `'Seller'`.
+- Routing: The app shell renders the standard purchase list tabs. Access to the dashboard is routed through the side navigation Drawer. Selecting "Dashboard" pops the drawer and pushes `SellerDashboardScreen` as a subpage route.
+
+---
+
+## 2. listing/Uploading a Product
+Tapping the "List New Item" quick action button in the Dashboard navigates to `SellScreen`. The listing process flows as follows:
+1. Sourcing Visuals: Sellers can select a default category mock vector image or choose a custom file from their local gallery.
+2. Form Validation: Sellers fill out the title, price, stock quantity, category description, condition chip, and description.
+3. Binary Upload to Storage (Pick & Upload):
+   - Selecting a custom image triggers `FilePicker.pickFiles()`.
+   - File picker returns a local filepath (or bytes on web).
+   - When the user clicks "Publish Listing", `AppState.addProduct()` is called.
+   - If the image path is local (not starting with http/assets), the app uploads it to Firebase Storage:
+     `FirebaseStorage.instance.ref().child('product_images/$productId')`
+     using `.putFile()` (mobile) or `.putData()` (web).
+   - The app waits (`await`) for the upload task to finish and retrieves the download URL using `getDownloadURL()`.
+4. Writing Product to Firestore:
+   `await _firestore.collection('products').doc(product.id).set({...})`
+   This stores the retrieved download URL inside the document under the `imageUrl` key.
+5. Notification Trigger: Stores an alert document in the `notifications` collection to inform the seller.
+
+---
+
+## 3. Editing and Deleting Listings
+- Editing listings: Selecting a product from the Catalog tab or My Listings screen navigates to `EditListingScreen`. Changes are committed using `update()` on the target document:
+  `await _firestore.collection('products').doc(product.id).update(data);`
+  If a new custom image is picked to replace the old one, the new file is uploaded to Storage first.
+- Deleting listings: Swiping to delete or tapping the delete bin icon triggers `deleteProduct(id)`. This:
+  * Calls `storageRef.delete()` to remove the image file.
+  * Calls `_firestore.collection('products').doc(id).delete()`.
+
+---
+
+## 4. Automatic Stock and Inventory Updates
+- Order checkout decrement: During a buyer's checkout, a transaction-like batch commits. For every item in the cart, the system checks the catalog stock level. It calculates:
+  `newStock = latestProd.stock - item.quantity`
+- Batch update: The batch updates the product document's stock field. If stock drops to 0, `isSold` is set to `true`, and the product is marked as `'inactive'`:
+  `batch.update(prodRef, { 'stock': 0, 'isSold': true });`
+- Automated System alerts:
+  * If stock drops between 1 and 5, low stock alerts are sent to the seller.
+  * If stock hits 0, out of stock alerts are sent.
+
+---
+
+## 5. Orders Received Operations
+Incoming orders are displayed in a real-time list on the dashboard under "Recent Sales". Sellers manage orders as follows:
+- Order Status Transitions: Sellers open the order management dialog or screen, and change the status using a dropdown.
+- Modifying Firestore: Tapping the state calls:
+  `await _firestore.collection('orders').doc(orderId).update({'status': newStatus});`
+- Real-time completed checks: If the seller marks the status as `'Delivered'`, the system automatically appends a completion timestamp:
+  `updates['completedAt'] = FieldValue.serverTimestamp();`
+  This triggers calculations for total revenue, graphs, and completed profiles.
+
+---
+
+## 6. Financial Analytics Dashboard & Trend Painting
+- Metrics panel: The dashboard calculates metrics from the active orders stream:
+  * Total Revenue: Sum of (price * quantity) of all orders with status `'Delivered'`.
+  * Active listings count: Count of items where `status == 'active'` and `sellerId == uid`.
+  * Items sold: Sum of quantities of delivered orders.
+- Interactive custom Trend Chart: In `AnalyticsScreen`, changing filters (Today, 7 days, 30 days) reroutes calculations.
+  * Line curve (Bezier path): Renders revenue trends plotted across completed datetimes.
+  * Bar charts: Render orders volume trends.
+  * Class structure: `FlexibleChartPainter` handles custom canvas lines, grids, ticks, and dots matching the premium theme colors.
+- Customer cohort profiling: Tracks buyer counts from orders:
+  * Total buyers: Count of unique buyer IDs.
+  * Returning buyers: Count of buyer IDs with more than one completed order.
+  * New buyers: Buyer IDs with exactly one completed order.

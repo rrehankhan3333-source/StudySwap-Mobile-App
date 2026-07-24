@@ -1,0 +1,47 @@
+# PART 12: KEY FLUTTER WIDGETS USED IN STUDYSWAP
+
+StudySwap matches a clean layout design using Material Design 3 widgets. Below is the structural guide of the widgets used.
+
+## 1. Structure and App-shell Widgets
+- `MaterialApp`: The root widget of the application. It initializes the overall theme configurations (`lightTheme` and `darkTheme`), text styling, and custom navigation configurations.
+- `Scaffold`: Implements the basic Material Design visual layout structure, providing helper parameters like `appBar`, `body`, `drawer`, `bottomNavigationBar`, and `floatingActionButton`.
+- `AppBar`: Provides the top navigation banner of the app. It holds category headings, custom back navigation buttons, and search forms.
+- `Drawer`: A side navigation panel that slides out from the left edge of the Scaffold. Used in `HomeScreen` to house Seller dashboards and configuration profiles.
+- `BottomNavigationBar`: Used in Buyer's HomeScreen context. Holds distinct page directories (Home, Saved, Basket, Messages, and Profile), switching screen index states in-memory.
+
+---
+
+## 2. Layout and Component Position Widgets
+- `Container`: A multi-purpose box model widget that groups decoration properties (gradients, borders, border radius, background color, card shadows) and layout constraints (padding, margin, width, height).
+- `Card`: A widget with rounded corners and elevation shadows that separates sections like products, dashboards, and orders.
+- `Stack` and `Positioned`: A stack overlays widgets on top of each other. `Positioned` locates a child relative to the edges of the stack. We use this to place "Unread Notification" counters on top of mail icons.
+- `Expanded` and `Flexible`: Adjusts widget sizing inside rows or columns. `Expanded` forces a child to fill the entire remaining horizontal or vertical space. `Flexible` allows its child to size itself dynamically up to the remaining space.
+
+---
+
+## 3. Lists and Grids Widgets
+- `ListView.builder`: Renders a linear directory of scrolling components. Uses a builder function to construct elements on-demand, which optimizes memory by recycling out-of-screen widgets. Used for displaying notifications, orders, or message lists.
+- `GridView.builder`: Renders a two-dimensional grid of scrolling cards (e.g. products listing catalog grids), optimizing memory consumption similarly to `ListView.builder`.
+
+---
+
+## 4. Input and Forms widgets
+- `Form`: A container for grouping multiple input fields. It provides a `GlobalKey<FormState>` parameter to validate all input fields at once.
+- `TextFormField`: Subclass of `TextField` designed for Forms. It supports custom styling, hint labels, prefix selectors, and validator callbacks to display real-time error bubbles (e.g. email checks, empty validations).
+
+---
+
+## 5. Async Rendering and Stream Widgets
+- `StreamBuilder`: Rebuilds itself on every stream emission. (Used primarily in chat message flows).
+- `FutureBuilder`: Rebuilds widgets relative to a Future's execution states (e.g. ConnectionState.waiting, ConnectionState.done), allowing loaders to render while fetching profiles.
+
+---
+
+## 6. Feedback, Gestures, Visuals Widgets
+- `GestureDetector`: Detects user gestures (taps, double-taps, drags, long-presses) on non-interactive parent layers like container areas.
+- `CircularProgressIndicator`: A progress spinner that blocks other interactions during database transactions (login, signup, checkout, asset publishing).
+- `CircleAvatar`: Displays a circular avatar container for portraits. Used to display user profile pictures.
+- `Image.network` and `Image.asset`: `Image.asset` displays packaged local images. `Image.network` displays seller listing upload images fetched from Storage download URLs.
+- `Hero`: Provides hero slide animations between screens (such as transitioning a product's card image of one screen into the large detail photo of the ProductDetails screen).
+- `ValueListenableBuilder`: Rebuilds parts of the widget tree when the value of a `ValueNotifier` changes, optimizing performance.
+- `ChoiceChip`: Renders chip selectors for categories or item conditions like "New" and "Good".

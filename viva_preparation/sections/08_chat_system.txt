@@ -1,0 +1,53 @@
+# PART 8: CHAT SYSTEM & MESSAGING FLOW
+
+The peer-to-peer real-time communication system in StudySwap is built on top of Firestore document reference listeners.
+
+## 1. Data Schema Hierarchy in Firestore
+To minimize document size and optimize cost queries, StudySwap organizes discussions into two hierarchies:
+- Conversations Collection: The root folder `conversations` contains summary channels. Each document represents a chat channel. E.g.
+  `conversations/docId`
+  This document stores participants, buyer/seller UIDs, product names, sharded thumbnails, last sent preview, unread counters, and custom sorting metadata.
+- Messages Collection (Subcollection): Under each conversation document, there is a nested subcollection folder named `messages`. E.g.
+  `conversations/docId/messages/messageId`
+  This collection stores the individual text documents, containing `senderId`, `receiverId`, `text`, `isRead`, and `timestamp` fields.
+
+---
+
+## 2. Dynamic Real-time Chat Streaming
+Chat messages load dynamically when a user opens the chat dialog:
+1. Active Message Listener: When `chat_screen.dart` loads, it triggers:
+   `AppState.listenToMessages(conversationId);`
+2. query subscription: This subscribes to the messages subcollection sorted by timestamp:
+   `_firestore.collection('conversations').doc(conversationId).collection('messages').orderBy('timestamp', descending: false).snapshots().listen((snapshots) { ... })`
+3. state update: As snapshots arrive, they are mapped to `ChatMessage.fromFirestore()` objects and appended to `conv.messagesNotifier.value`.
+4. UI Rebuilds: The screen displays the messages list via a `ValueListenableBuilder` listening to `messagesNotifier`, which automatically rebuilds when the list is populated.
+5. auto-read Triggers: The stream listener automatically resets the unread count for the current user:
+   `_resetUnreadCount(conversationId, uid);`
+   This updates `unreadCount.currentUserId: 0` in the parent conversation document.
+
+---
+
+## 3. Creating conversations (startOrGetConversation)
+When a buyer clicks "Chat with Seller" on the product detail page, the app calls:
+`AppState.startOrGetConversation(product);`
+1. Duplicate prevention check: Queries the `conversations` collection to see if a channel already exists for the matching buyer, seller, and product:
+   `_firestore.collection('conversations').where('buyerId', isEqualTo: uid).where('sellerId', isEqualTo: sellerId).where('productId', isEqualTo: product.id).limit(1).get()`
+2. Redirect existing channel: If a document is returned, it returns that document's ID.
+3. Construct new channel: If no document is found, it creates a new conversation document:
+   `_firestore.collection('conversations').doc()`
+   This document stores sharded information (buyer/seller details, listing image metadata) so the chat inbox can render list items without performing multiple subqueries.
+
+---
+
+## 4. Sending Messages (addMessage)
+When a user types a message and clicks the send button:
+`AppState.addMessage(convId, text);`
+This transaction uses a Firestore batch write:
+1. Append Message document: Creates a new document in the messages subcollection:
+   `batch.set(messageRef, { ... 'senderId': uid, 'text': text, 'timestamp': FieldValue.serverTimestamp() });`
+2. Update Parent Conversation: Updates the parent document to refresh the last message preview, set a new server timestamp, and increment the recipient's unread counter:
+   `batch.update(parentRef, { 'lastMessage': text, 'lastMessageTime': serverTimestamp(), 'unreadCount.$recipientId': FieldValue.increment(1) });`
+3. Commit Batch: Writes all changes atomicly.
+4. Alerts trigger: Automatically creates a notification document:
+   `addNotification("New message from Seller/Buyer", text, type: "Messages", userId: recipientId, relatedId: convId)`
+   This triggers a real-time message notification on the recipient's device.

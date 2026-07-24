@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'edit_listing_screen.dart';
+import 'chat_screen.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final Product product;
@@ -425,8 +426,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                       Text("Availability", style: TextStyle(color: AppTheme.textMedium, fontSize: 11, fontWeight: FontWeight.bold)),
                                       const SizedBox(height: 4),
                                       Text(
-                                        "In Stock",
-                                        style: TextStyle(fontWeight: FontWeight.w800, color: AppTheme.textDark, fontSize: 14),
+                                        widget.product.stock <= 0
+                                            ? "Out of Stock"
+                                            : "In Stock (${widget.product.stock} left)",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          color: widget.product.stock <= 0
+                                              ? Colors.redAccent.shade700
+                                              : AppTheme.textDark,
+                                          fontSize: 14,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -466,31 +475,110 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   if (isBuyer) {
                     return Row(
                       children: [
+                        Container(
+                          height: 54,
+                          width: 54,
+                          decoration: BoxDecoration(
+                            color: AppTheme.bgCard,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppTheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                          child: IconButton(
+                            onPressed: () async {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                              try {
+                                final convId = await AppState.startOrGetConversation(widget.product);
+                                if (context.mounted) {
+                                  Navigator.pop(context); // pop progress indicator
+                                  final conversations = AppState.conversationsNotifier.value;
+                                  final convIndex = conversations.indexWhere((c) => c.id == convId);
+                                  if (convIndex >= 0) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ChatScreen(conversation: conversations[convIndex]),
+                                      ),
+                                    );
+                                  } else {
+                                    final otherUid = widget.product.sellerId ?? 'mock_seller_id';
+                                    final tempConv = ChatConversation(
+                                      id: convId,
+                                      userName: widget.product.sellerName,
+                                      lastMessage: "Chat started.",
+                                      lastMessageTime: "Just now",
+                                      unreadCount: 0,
+                                      productImageUrl: widget.product.imageUrl,
+                                      productTitle: widget.product.title,
+                                      buyerId: AppState.currentUser?.uid ?? '',
+                                      sellerId: otherUid,
+                                      productId: widget.product.id,
+                                      initialMessages: [],
+                                    );
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ChatScreen(conversation: tempConv),
+                                      ),
+                                    );
+                                  }
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  Navigator.pop(context); // pop loading dialog
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text("Failed to start chat: $e"),
+                                      backgroundColor: Colors.redAccent.shade700,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            icon: Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              color: AppTheme.primary,
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: SizedBox(
                             height: 54,
                             child: OutlinedButton(
-                              onPressed: () {
-                                AppState.addToCart(widget.product);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text("${widget.product.title} added to cart!"),
-                                    duration: const Duration(seconds: 2),
-                                    action: SnackBarAction(
-                                      label: "UNDO",
-                                      textColor: AppTheme.secondary,
-                                      onPressed: () => AppState.removeFromCart(widget.product),
-                                    ),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              },
+                              onPressed: widget.product.stock <= 0
+                                  ? null
+                                  : () {
+                                      AppState.addToCart(widget.product);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text("${widget.product.title} added to cart!"),
+                                          duration: const Duration(seconds: 2),
+                                          action: SnackBarAction(
+                                            label: "UNDO",
+                                            textColor: AppTheme.secondary,
+                                            onPressed: () => AppState.removeFromCart(widget.product),
+                                          ),
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                    },
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(color: AppTheme.primary, width: 2),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               ),
                               child: Text(
-                                "Add to Cart",
+                                widget.product.stock <= 0 ? "Out of Stock" : "Add to Cart",
                                 style: TextStyle(
                                   color: AppTheme.primary,
                                   fontSize: 15,
@@ -505,11 +593,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           child: SizedBox(
                             height: 54,
                             child: ElevatedButton(
-                              onPressed: () {
-                                AppState.addToCart(widget.product);
-                                // Directly trigger checkout simulation
-                                AppState.checkout();
-                                showDialog(
+                              onPressed: widget.product.stock <= 0
+                                  ? null
+                                  : () {
+                                      AppState.addToCart(widget.product);
+                                      // Directly trigger checkout simulation
+                                      AppState.checkout();
+                                      showDialog(
                                   context: context,
                                   builder: (context) => AlertDialog(
                                     backgroundColor: AppTheme.bgCard,
@@ -548,9 +638,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                 elevation: 0,
                               ),
-                              child: const Text(
-                                "Buy Now",
-                                style: TextStyle(
+                              child: Text(
+                                widget.product.stock <= 0 ? "Sold Out" : "Buy Now",
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w800,

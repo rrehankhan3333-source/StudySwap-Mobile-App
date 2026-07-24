@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo Library access is required to pick study material cover photos.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is required to take live site photos.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access is required for video recordings.</string>
 </dict>
 </plist>

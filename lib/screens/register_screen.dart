@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'home_screen.dart';
@@ -43,6 +45,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _roleError;
 
   bool _submitted = false;
+  bool _isLoading = false;
 
   void _validateName(String value) {
     if (value.isEmpty) {
@@ -646,7 +649,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     boxShadow: AppTheme.buttonShadow,
                   ),
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: _isLoading ? null : () async {
                       setState(() {
                         _submitted = true;
                       });
@@ -689,36 +692,74 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         return;
                       }
 
-                      // Update AppState
-                      AppState.userRoleNotifier.value = accountType;
-                      if (_nameController.text.isNotEmpty) {
-                        AppState.nameNotifier.value = _nameController.text;
-                      }
-                      if (_emailController.text.isNotEmpty) {
-                        AppState.emailNotifier.value = _emailController.text;
-                      }
-                      if (_phoneController.text.isNotEmpty) {
-                        AppState.phoneNotifier.value = _phoneController.text;
-                      }
+                      setState(() {
+                        _isLoading = true;
+                      });
 
-                      // Welcome alert
-                      AppState.addNotification(
-                        "Welcome to StudySwap!",
-                        "Exchange your books, notes, and study guidelines today.",
-                      );
+                      try {
+                        final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                          email: _emailController.text.trim(),
+                          password: _passwordController.text,
+                        );
+                        final user = credential.user;
+                        if (user != null) {
+                          await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+                            'uid': user.uid,
+                            'fullName': _nameController.text.trim(),
+                            'email': _emailController.text.trim(),
+                            'phone': _phoneController.text.trim(),
+                            'accountType': accountType,
+                            'profileImage': '',
+                            'createdAt': FieldValue.serverTimestamp(),
+                          });
 
-                      // Navigate to Home
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
-                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                            return FadeTransition(opacity: animation, child: child);
-                          },
-                          transitionDuration: const Duration(milliseconds: 500),
-                        ),
-                        (route) => false,
-                      );
+                          await AppState.addNotification(
+                            "Welcome to StudySwap!",
+                            "Exchange your books, notes, and study guidelines today.",
+                            type: "System",
+                          );
+
+                          if (mounted) {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  return FadeTransition(opacity: animation, child: child);
+                                },
+                                transitionDuration: const Duration(milliseconds: 500),
+                              ),
+                              (route) => false,
+                            );
+                          }
+                        }
+                      } on FirebaseAuthException catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(e.message ?? "Registration failed. Please try again."),
+                              backgroundColor: Colors.redAccent,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Error: ${e.toString()}"),
+                              backgroundColor: Colors.redAccent,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      } finally {
+                        if (mounted) {
+                          setState(() {
+                            _isLoading = false;
+                          });
+                        }
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       shape: RoundedRectangleBorder(
@@ -727,14 +768,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       backgroundColor: AppTheme.primary,
                       elevation: 0,
                     ),
-                    child: const Text(
-                      "Create Profile",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.2,
+                            ),
+                          )
+                        : const Text(
+                            "Create Profile",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                   ),
                 ),
               ),

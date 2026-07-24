@@ -15,6 +15,8 @@ import 'orders_screen.dart';
 import 'settings_screen.dart';
 import 'wishlist_screen.dart';
 import 'my_listings_screen.dart';
+import 'dashboard_screen.dart';
+import 'analytics_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -289,22 +291,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icons.logout_rounded,
                 label: "Logout",
                 color: Colors.redAccent.shade700,
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(context);
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LoginScreen(),
-                    ),
-                    (route) => false,
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text("Logged out successfully."),
-                      backgroundColor: Colors.redAccent.shade700,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
+                  try {
+                    await AppState.signOut();
+                  } catch (e) {
+                    debugPrint("Error signing out: $e");
+                  }
+                  if (context.mounted) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
+                      (route) => false,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text("Logged out successfully."),
+                        backgroundColor: Colors.redAccent.shade700,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
                 },
               ),
             ),
@@ -411,7 +420,10 @@ class _HomeScreenState extends State<HomeScreen> {
         label: "Dashboard",
         onTap: () {
           Navigator.pop(context);
-          changeTab(0);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SellerDashboardScreen()),
+          );
         },
       ),
       _drawerItem(
@@ -462,12 +474,9 @@ class _HomeScreenState extends State<HomeScreen> {
         label: "Analytics",
         onTap: () {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Analytics coming soon."),
-              backgroundColor: AppTheme.primary,
-              behavior: SnackBarBehavior.floating,
-            ),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
           );
         },
       ),
@@ -709,7 +718,7 @@ class _HomeContentState extends State<HomeContent> {
                                   ),
                                 ),
                               ),
-                              if (notifs.isNotEmpty)
+                              if (notifs.any((n) => !n.isRead))
                                 Positioned(
                                   right: 2,
                                   top: 2,

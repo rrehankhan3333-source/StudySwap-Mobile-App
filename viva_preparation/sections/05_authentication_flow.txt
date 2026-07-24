@@ -1,0 +1,85 @@
+# PART 5: AUTHENTICATION FLOW
+
+Authentication in StudySwap coordinates user access by wrapping Firebase Authentication and Firestore together in a synchronized lifecycle.
+
+## 1. Account Creation (Registration)
+When a student fills out the registration form in `register_screen.dart` and clicks "Create Profile", the following steps occur:
+1. Input Verification: Client-side validation checks requirements for full name, academic email format (`@*.edu` checks etc.), phone number length, password strength, and matching passwords.
+2. Firebase account creation: If clean, the app triggers:
+   `await FirebaseAuth.instance.createUserWithEmailAndPassword(email, password)`
+   This registers the user with Firebase Authentication using an encrypted password.
+3. Creation of Firestore Document: Once the above returns a credentials object, the user's Auth `UID` is extracted. The code immediately registers details in the database:
+   `await FirebaseFirestore.instance.collection('users').doc(user.uid).set({ ... })`
+   This stores the profile's non-credentials details (`uid`, `fullName`, `email`, `phone`, `accountType: "Buyer" | "Seller"`).
+4. System Notification: The method uploads a default system welcome alert.
+5. Home transition: The app uses `Navigator.pushAndRemoveUntil` to navigate to `HomeScreen()`.
+
+---
+
+## 2. Login Flow
+When a user inputs their email and password in `login_screen.dart` and taps "Sign In":
+1. Input check: Validates standard inputs.
+2. Firebase Authentication:
+   `await FirebaseAuth.instance.signInWithEmailAndPassword(email, password)`
+   This requests credentials validation from the Firebase server.
+3. Account Type Parsing: If the login succeeds, the screen fetches the user's Firestore document manually:
+   `final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();`
+   Reads the `accountType` field.
+4. Set AppState: Updates the state manager's user role value notifier:
+   `AppState.userRoleNotifier.value = userDoc.data()?['accountType'] ?? 'Buyer';`
+5. Home transition: Navigates to `HomeScreen()`.
+
+---
+
+## 3. Logout Flow
+Tapping the logout list item in `profile_screen.dart` triggers:
+`await AppState.signOut();`
+Inside `AppState.signOut()`:
+1. All Firestore listeners are destroyed to prevent memory leaks and unauthorized access warnings:
+   `_userSubscription?.cancel(); _productsSubscription?.cancel(); ...`
+2. The user's local variables (name, roles, list states) are reset to empty values.
+3. Signs out of Firebase Authentication:
+   `await _auth.signOut();`
+4. The UI routes back to `LoginScreen()`.
+
+---
+
+## 4. Role Detection and Separation
+- Database Driven: A user's role is stored in Firestore under the `accountType` field in the `users` collection.
+- Local State Hook: When a user authenticates, `AppState._setupAllSubscriptions(uid)` sets up a live listener on the user's doc. If the role changes in the database, `AppState.userRoleNotifier` updates automatically.
+- Front-End Rendering:
+  * Buyers see a standard bottom navigation bar with options for Home, Wishlist, Cart, Messages, and Profile.
+  * Sellers see the exact same home browsing screen as buyers (so they can search resources). However, their side drawer includes a "Dashboard" item. Tapping it opens the `SellerDashboardScreen` subpage.
+
+---
+
+## 5. Register-to-Home Step-by-Step Flow Chart
+The checklist below describes the sequential operations during registration:
+
++----------------------------+
+| 1. user fills signup form  |  <- register_screen.dart
++--------------v-------------+
+               | Triggers
++--------------v-------------+
+| 2. Client validation runs  |  <- Name regex, email format logic
++--------------v-------------+
+               | If all fields valid
++--------------v-------------+
+| 3. Create Auth Credentials  |  <- calls auth.createUserWithEmailAndPassword()
++--------------v-------------+
+               | Returns Auth Credentials Object + User UID
++--------------v-------------+
+| 4. Create User Document    |  <- writes to firestore: collection('users').doc(uid).set()
++--------------v-------------+
+               | Doc successfully written
++--------------v-------------+
+| 5. Trigger Welcome Alert   |  <- calls AppState.addNotification(..., type: "System")
++--------------v-------------+
+               | Notification logged
++--------------v-------------+
+| 6. Setup Streams           |  <- AppState.init() launches subscriptions for User UID
++--------------v-------------+
+               | Streams connected
++--------------v-------------+
+| 7. Route to Home Page      |  <- Navigator.pushAndRemoveUntil(HomeScreen(), ...)
++----------------------------+

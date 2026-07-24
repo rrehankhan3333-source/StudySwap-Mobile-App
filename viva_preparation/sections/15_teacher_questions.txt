@@ -1,0 +1,51 @@
+# PART 15: TEACHER-LEVEL VIVA QUESTIONS & ANSWERS
+
+Here is the compilation of 18 complex, high-difficulty concepts and scenario questions.
+
+## 1. Cloud Firestore Internal Operations
+1. Q: How does Firestore maintain database changes across offline clients?
+   A: It uses an offline caching layer. Writes are stored in an offline queue locally. When the connection is restored, the client uploads the queue to the cloud database.
+2. Q: Why did you choose snapshots() instead of periodic polling?
+   A: Polling creates high database read overhead and consumes battery life on client devices. Snapshots hook up persistent socket connections and stream changes instantly.
+3. Q: What is a Firestore Index, and did you define any custom indexes?
+   A: Indexes allow Firestore to query large collections efficiently. Yes, custom composite indexes were defined for the chat system queries that filter by multiple fields: `buyerId == uid` + `sellerId == sellerId` + `productId == productId` sorted by `lastMessageTime`.
+
+## 2. Transactions and Write Operations
+4. Q: What is the difference between dry-running/writing a Batch vs using a Firestore Transaction?
+   A: Batches execute several write operations atomically without reading first. Transactions allow both reads and writes. If a document changes during a transaction, the operation retries automatically.
+5. Q: Why is checkout() implemented as a Batch instead of a Transaction?
+   A: The required product stock quantity is already cached in `cartNotifier` in-memory. We just need to commit writes (creating orders, updating stock, deleting cart items) atomically, which is what a Batch is optimized for.
+6. Q: What are the latency impacts of Firestore Batch writes?
+   A: Committing a batch executes in a single round-trip database write, reducing network latency compared to execution of separate writes.
+
+## 3. Data Structure and Sharding
+7. Q: Why is storing all messages in a single array inside the conversation document bad?
+   A: A single Firestore document is capped at 1MB. A long conversation would quickly exceed this limit. Storing messages in a subcollection allows infinite growth.
+8. Q: Why did you duplicate data (e.g. sellerName or productTitle) in conversation and cart documents?
+   A: In NoSQL, this is called denormalization. We duplicate fields to render listing cards or message details immediately, avoiding the need for multiple document reads.
+9. Q: How do you prevent data inconsistency when a seller edits a product title after an order is placed?
+   A: During checkout, we copy a snapshot of the product details at that moment into the order document. This preserves the purchase details regardless of future catalog changes.
+
+## 4. State Subscriptions and Memory Optimizations
+10. Q: Why is extending ChangeNotifiers or ValueNotifiers better than using Global State context directly for all views?
+    A: It decouples core business logic from widget builds. App state lives in a clean, stateful Dart class rather than inside the UI widgets.
+11. Q: How do you prevent memory leaks when managing multiple stream subscriptions?
+    A: We store listener references in `StreamSubscription` properties and call `.cancel()` on them inside the `signOut()` method.
+12. Q: When does Flutter rebuild a ValueListenableBuilder?
+    A: When the `ValueNotifier` changes its internal value pointer (for objects, `value = updatedObj` must be assigned to trigger rebuilds).
+
+## 5. Security & Validation Rules
+13. Q: How do you prevent a user from claiming to be someone else in chat messages?
+    A: By validating inputs. Additionally, Firestore security rules ensure that `request.auth.uid == data.senderId`.
+14. Q: How did you implement real-time validation on forms?
+    A: We used `TextFormField` validator callbacks, which return warning strings if the input does not meet the specified format.
+15. Q: What happens if a buyer attempts to enter negative numbers in the cart?
+    A: We validate inputs inside the cart controllers. The quantity cannot drop below 1.
+
+## 6. Architecture Scenarios
+16. Q: If the user drops connection during a File Upload, how does the app recover?
+    A: Firebase Storage's `UploadTask` monitors progress. If it fails, our `catch` block intercepts the error, dismisses the loading indicator, and displays a SnackBar warning.
+17. Q: Why is `DefaultFirebaseOptions.currentPlatform` preferred over inline configurations?
+    A: It automatically selects correct platform keys (Android Client vs. iOS Client vs. Web) at build time, simplifying configuration.
+18. Q: How would you scale StudySwap to support 100,000 active students?
+    A: We would apply database sharding for messaging, use Algolia/ElasticSearch for catalog searches, and implement Cloud Functions to handle notifications.

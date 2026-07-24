@@ -1,0 +1,149 @@
+# PART 4: EXPLAIN EVERY IMPORTANT CRUD OPERATION
+
+In StudySwap, Firestore reads and writes are executed via the official `cloud_firestore` package. Below is the technical breakdown of the 15 important operations utilized in StudySwap.
+
+## 1. doc() and collection()
+- Code Snippet:
+```dart
+_firestore.collection('savedItems').doc("${uid}_${product.id}")
+```
+- Explanation: `collection('col_name')` creates or fetches a reference to a parent folder (logical table) in Firestore. `doc('doc_id')` points to a specific document in that collection.
+- Rationale: Used to point to a specific record. In our code, we do this to create or query composite keys like `${uid}_${product.id}` for carts and wishlists.
+- Process: Runs locally. Firebase does not execute a network call until you run a read/write operation like `get()`, `set()`, or `update()`.
+
+---
+
+## 2. set()
+- Code Snippet:
+```dart
+await _firestore.collection('users').doc(user.uid).set({
+  'uid': user.uid,
+  'fullName': _nameController.text.trim(),
+  'email': _emailController.text.trim(),
+  'phone': _phoneController.text.trim(),
+  'accountType': accountType,
+  'profileImage': '',
+  'createdAt': FieldValue.serverTimestamp(),
+});
+```
+- Explanation: `set()` writes a document to Firestore at the specified location. If the document already exists, `set()` completely overwrites its content unless you pass the option `SetOptions(merge: true)`.
+- Rationale: Renders profile creations after auth signups, ensuring that the Firestore document sits exactly under the user's Auth `UID`.
+- Difference: Unlike `add()`, which auto-generates a random ID, `set()` allows the client to define the target document ID.
+
+---
+
+## 3. add()
+- Code Snippet: There is no native `.add()` block in app_state.dart because we use `doc().set()` or `batch.set()` to enforce custom/deterministic IDs, or `doc()` without arguments to generate unique IDs before writing.
+- Example of doc().set() representing the exact equivalent of add():
+```dart
+final docRef = _firestore.collection('notifications').doc();
+await docRef.set({ 'notificationId': docRef.id, ... });
+```
+- Explanation: In Firestore, `.add()` is a shorthand helper. Calling `collection.add(data)` is equivalent to calling `collection.doc().set(data)`.
+- Difference: With `.add(data)`, you cannot get the document ID before writing. With `.doc().set(data)`, you generate the ID first (`docRef.id`), store that ID inside the document itself (as `notificationId`), and then write.
+
+---
+
+## 4. update()
+- Code Snippet:
+```dart
+await _firestore.collection('orders').doc(orderId).update(updates);
+```
+- Explanation: `update()` modifies specific key-value fields inside an existing document. It does not overwrite the entire document.
+- Rationale: Modifies states like changing an order status (Pending -> Delivered) or adding 1 to cart quantities without erasing secondary fields.
+- Difference: `update()` fails if the document does not exist, whereas `set()` creates a new document.
+
+---
+
+## 5. delete()
+- Code Snippet:
+```dart
+await _firestore.collection('cart').doc("${uid}_${product.id}").delete();
+```
+- Explanation: `delete()` completely removes the document at the target document reference path.
+- Rationale: Executed when remove items from cart or wishlist, and when deleting listings.
+
+---
+
+## 6. get()
+- Code Snippet:
+```dart
+final docSnapshot = await docRef.get();
+if (docSnapshot.exists) { ... }
+```
+- Explanation: `get()` carries out a single, one-time read request to the database. It returns a future with a snapshot of the document's fields at that moment.
+- Rationale: Checks if a product is already in the wishlist, or retrieves a profile document to inspect account roles.
+- Difference: `get()` is a one-time read operation, whereas `snapshots()` sets up a live subscription.
+
+---
+
+## 7. snapshots()
+- Code Snippet:
+```dart
+_firestore.collection('products').snapshots().listen((prodSnapshot) { ... });
+```
+- Explanation: `snapshots()` creates a live data stream of query results.
+- Rationale: Kept active permanently in `AppState` subscriptions, ensuring listings, cart numbers, notifications, and orders update in real-time.
+- Difference: `snapshots()` keeps a persistent connection open, whereas `get()` is a one-time read.
+
+---
+
+## 8. where()
+- Code Snippet:
+```dart
+.collection('savedItems').where('userId', isEqualTo: uid)
+```
+- Explanation: `where()` filters document outputs from a collection based on specific field values.
+- Rationale: Restricts cart item streams to the currently logged-in user (`buyerId == uid`).
+
+---
+
+## 9. orderBy()
+- Code Snippet:
+```dart
+.collection('messages').orderBy('timestamp', descending: false)
+```
+- Explanation: `orderBy()` sorts query results by a specified field in ascending or descending order.
+- Rationale: Ensures chat messages render in correct chronological order in the chat screen.
+
+---
+
+## 10. limit()
+- Code Snippet:
+```dart
+_firestore.collection('products').limit(1).get()
+```
+- Explanation: `limit()` caps the number of matching documents returned by a query.
+- Rationale: Optimizes reads when checking if a collection is empty, or checking if a conversation between two users already exists.
+
+---
+
+## 11. toMap() and fromFirestore()
+- Code Snippet:
+```dart
+factory Product.fromFirestore(Map<String, dynamic> data, String id) { ... }
+Map<String, dynamic> toMap() { ... }
+```
+- Explanation: Helpers that paint translation boundaries between strongly-typed Dart objects (`Product`) and maps (`Map<String, dynamic>`) stored in Firestore.
+- Rationale: Dart requires type safety, while Firestore stores documents as JSON-like documents.
+
+---
+
+## 12. FieldValue.serverTimestamp()
+- Code Snippet:
+```dart
+'createdAt': FieldValue.serverTimestamp()
+```
+- Explanation: A token passed to Firestore that tells the server to insert its current clock time.
+- Rationale: Solves client time drift issues and ensures consistent timestamps for orders and notifications.
+
+---
+
+## 13. FieldValue.increment()
+- Code Snippet:
+```dart
+'unreadCount.$otherUid': FieldValue.increment(1)
+```
+- Explanation: A mathematical token that tells the Firestore server to increment a numeric field by a specified value.
+- Rationale: Used in `addMessage` to increment the recipient's unread message counter.
+- Key Advantage: Avoids write conflicts (race conditions) that happen when multiple clients read, modify, and write a counter simultaneously.

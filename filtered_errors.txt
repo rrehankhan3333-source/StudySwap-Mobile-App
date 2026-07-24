@@ -1,0 +1,128 @@
+﻿
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\analy
+tics_screen.dart:643:32 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\analy
+tics_screen.dart:784:28 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\analy
+tics_screen.dart:803:26 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\analy
+tics_screen.dart:984:27 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\analy
+tics_screen.dart:1019:43 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\analy
+tics_screen.dart:1027:41 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\analy
+tics_screen.dart:1058:31 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\analy
+tics_screen.dart:1058:61 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\dashb
+oard_screen.dart:221:55 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\dashb
+oard_screen.dart:288:49 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\dashb
+oard_screen.dart:300:61 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\dashb
+oard_screen.dart:325:61 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\dashb
+oard_screen.dart:601:60 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\dashb
+oard_screen.dart:677:98 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\dashb
+oard_screen.dart:688:57 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\dashb
+oard_screen.dart:773:41 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\dashb
+oard_screen.dart:779:36 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\dashb
+oard_screen.dart:796:36 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\dashb
+oard_screen.dart:870:34 - 
+deprecated_member_use
+   info - 'withOpacity' is 
+deprecated and shouldn't be used. 
+Use .withValues() to avoid 
+precision loss - lib\screens\my_li
+stings_screen.dart:266:72 - 
+deprecated_member_use
+   info - Unnecessary braces in a 
+string interpolation - 
+lib\state\app_state.dart:893:66 - 
+unnecessary_brace_in_string_interp
+s
+
+

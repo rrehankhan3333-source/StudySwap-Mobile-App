@@ -1,0 +1,65 @@
+# PART 1: PROJECT OVERVIEW
+
+## 1. Project Purpose
+StudySwap is a specialized peer-to-peer student marketplace designed specifically for university campuses. The primary objective is to enable college students to easily buy, sell, exchange, or share academic resources such as textbooks, hand-written lecture notes, scientific calculators, stationery, and lab equipment. Rather than relying on commercial, generic e-commerce platforms, StudySwap provides a localized, secure, and student-focused resource pool. It solves key problems like high textbook costs, wasteful disposal of active academic resources, and barrier-to-entry peer communication on campus.
+
+## 2. Dynamic Buyer Workflow
+The Buyer's flow in StudySwap proceeds through a structured sequence of screens:
+1. Entry & Splash: The app launches on the splash screen, checks if the user is authenticated, and directs them to the Login/Register flow, or directly to the Home Screen if already signed in.
+2. Home Screen: Once authenticated, a Buyer lands on a dashboard containing high-quality banner slides and categories.
+3. Category Filtration & Search: Buyers filter listings by categories (Books, Notes, etc.) or search for items using the Search bar.
+4. Item Detail Interaction: Selecting an item opens the product details screen. Buyers can see the item title, price, seller's name, stock level, condition review, and description.
+5. Cart & Wishlist: Buyers can toggle the "Favorite" button to persist items in their Wishlist. They can also tap "Add to Cart" or "Buy Now" to queue the item.
+6. Real-Time Chatting: By clicking "Chat with Seller", a buyer opens a direct real-time chat screen relative to that specific listing, allowing negotiations.
+7. Checkout: Proceeding to the Cart screen, the buyer confirms quantities and clicks "Checkout". This runs a secure Firestore batch transaction to create orders, decrement stock, and clear the cart.
+8. Order Tracking: Tapping standard orders in the profile list displays active orders with update states.
+
+## 3. Dynamic Seller Workflow
+The Seller's flow in StudySwap proceeds through these operational phases:
+1. Account Selection: Users select "Seller" during registration or login, storing `accountType: "Seller"` in their Firestore document.
+2. Main Navigation: Sellers access the standard search-and-browse page. They can open the side Drawer and tap "Dashboard" to slide open the Seller Hub as a back-navigable subpage route.
+3. Seller Dashboard: Displays key analytics like Total Revenue, Monthly/Today sales, Active Listings, Items Sold, Low/Out of Stock counters, and a table of the 5 latest sales.
+4. Listing Creation & Storage: Tapping "List New Item" allows the seller to fill title, price, stock, category, condition, and description. Sellers can select mock assets or upload live photos using the FilePicker, which uploads the image file to Firebase Storage.
+5. Listing Maintenance: Sellers can browse their listings, tap to edit stock/details, or swipe to delete, which automatically calls Firestore delete and deletes assets from Storage.
+6. Order Fulfillment Updates: When an order is received, the seller sees it on their dashboard. They can change the order status (Pending -> Shipped -> Delivered -> Cancelled) via a dropdown, which automatically logs the completion timestamp and alerts the buyer.
+
+## 4. Firebase Services Architecture
+StudySwap relies completely on Firebase for its serverless backend:
+1. Firebase Authentication: Handles signup, secure password validation, persistent login sessions, and role detection.
+2. Cloud Firestore: A NoSQL document database used to store users, listings, cart items, wishlist saves, order logs, messages, and notifications in real-time.
+3. Firebase Storage: Stores binary user artifacts, specifically selected listing images and user profile pictures.
+4. Real-time Streams: Listeners hook directly to Firestore collections via ValueNotifiers, prompting UI elements to update instantly without manual refreshes.
+
+## 5. Architectural Blueprint Diagram
+The following blueprint demonstrates how StudySwap aligns its UI layer with the Firebase backend:
+
++-------------------------------------------------------------------------+
+|                          STUDYSWAP APP CLIENT                           |
+|                                                                         |
+|   +-----------------------+   +-------------------+   +-------------+   |
+|   |   Presentation UI     |   | State Management  |   | App Theme   |   |
+|   |  (Flutter Widgets)    |   |  (AppState.dart)  |   | (AppTheme)  |   |
+|   +-----------+-----------+   +---------+---------+   +------+------+   |
++---------------|-------------------------|--------------------|----------+
+                | Listen                  | Reads/Writes       | Theme-aware
+                v                         v                    v
++-------------------------------------------------------------------------+
+|                           LOCAL DATA STREAMS                            |
+|                                                                         |
+|   - productsNotifier (ValueNotifier<List<Product>>)                     |
+|   - cartNotifier (ValueNotifier<List<CartItem>>)                        |
+|   - wishlistNotifier (ValueNotifier<List<Product>>)                     |
+|   - buyerOrdersNotifier / sellerReceivedOrdersNotifier                  |
+|   - conversationsNotifier & activeMessagesNotifier                      |
++--------------------------------v----------------------------------------+
+                                 | Stream Listeners / API calls
+                                 v
++-------------------------------------------------------------------------+
+|                            FIREBASE BACKEND                             |
+|                                                                         |
+|   +--------------------+ +--------------------+ +-------------------+   |
+|   | Firebase Auth      | | Cloud Firestore    | | Firebase Storage  |   |
+|   | - Sign Up / Login  | | - Collections      | | - Listings images |   |
+|   | - Session Tokens   | | - Real-time Docs   | | - Profile images  |   |
+|   +--------------------+ +--------------------+ +-------------------+   |
++-------------------------------------------------------------------------+

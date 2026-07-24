@@ -1,4 +1,8 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
@@ -8,6 +12,7 @@ import 'wishlist_screen.dart';
 import 'messages_screen.dart';
 import 'settings_screen.dart';
 import 'sell_screen.dart';
+import 'analytics_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -66,9 +71,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: const Text("Cancel", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
           ElevatedButton(
-            onPressed: () {
-              AppState.nameNotifier.value = _editNameController.text;
-              AppState.phoneNotifier.value = _editPhoneController.text;
+            onPressed: () async {
+              final uid = FirebaseAuth.instance.currentUser?.uid;
+              if (uid != null) {
+                try {
+                  await FirebaseFirestore.instance.collection('users').doc(uid).update({
+                    'fullName': _editNameController.text.trim(),
+                    'phone': _editPhoneController.text.trim(),
+                  });
+                } catch (e) {
+                  debugPrint("Error updating profile in firestore: $e");
+                }
+              }
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -90,6 +104,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
+  Future<void> _pickAndUploadProfileImage() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+      );
+
+      if (result != null) {
+        String? path;
+        final fileName = result.files.single.name;
+        final sizeInBytes = result.files.single.size;
+
+        if (kIsWeb) {
+          final bytes = result.files.single.bytes;
+          if (bytes != null) {
+            final extension = fileName.split('.').last.toLowerCase();
+            path = Uri.dataFromBytes(bytes, mimeType: 'image/$extension').toString();
+          }
+        } else {
+          path = result.files.single.path;
+        }
+
+        if (path != null) {
+          if (sizeInBytes / (1024 * 1024) > 5) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Error: Image size cannot exceed 5 MB.")),
+              );
+            }
+            return;
+          }
+
+          await AppState.uploadAndUpdateProfileImage(path);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Profile picture updated successfully!")),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error uploading profile picture: $e")),
+        );
+      }
+    }
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -161,12 +227,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: AppTheme.bgCard, 
                               shape: BoxShape.circle,
                             ),
-                            child: CircleAvatar(
-                              radius: 48,
-                              backgroundColor: AppTheme.bgCard,
-                              backgroundImage: NetworkImage(
-                                "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200",
-                              ),
+                            child: ValueListenableBuilder<String>(
+                              valueListenable: AppState.profileImageNotifier,
+                              builder: (context, profileImageUrl, child) {
+                                return CircleAvatar(
+                                  radius: 48,
+                                  backgroundColor: AppTheme.bgCard,
+                                  backgroundImage: profileImageUrl.isNotEmpty
+                                      ? NetworkImage(profileImageUrl)
+                                      : const NetworkImage("https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200"),
+                                );
+                              },
                             ),
                           ),
                           Positioned(
@@ -283,18 +354,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return ValueListenableBuilder<List<Product>>(
         valueListenable: AppState.productsNotifier,
         builder: (context, products, child) {
-          final sellerName = AppState.nameNotifier.value;
-          final myListings = products.where((p) => p.sellerName == sellerName).toList();
-          final activeCount = myListings.where((p) => !p.isSold).length;
-          final soldCount = myListings.where((p) => p.isSold).length;
+          final curUid = AppState.currentUser?.uid;
+          final myListings = products.where((p) => p.sellerId == curUid).toList();
+          final activeCount = myListings.where((p) => p.status.toLowerCase() == 'active' && !p.isSold).length;
 
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildStatCard("Active Items", activeCount.toString(), Icons.check_circle_rounded),
-              const SizedBox(width: 16),
-              _buildStatCard("Items Sold", soldCount.toString(), Icons.monetization_on_rounded),
-            ],
+          return ValueListenableBuilder<List<OrderModel>>(
+            valueListenable: AppState.sellerReceivedOrdersNotifier,
+            builder: (context, orders, child) {
+              final completedOrders = orders.where((o) => o.status.toLowerCase() == 'delivered').toList();
+              int soldCount = 0;
+              double revenue = 0.0;
+              for (var o in completedOrders) {
+                soldCount += o.quantity;
+                revenue += o.price * o.quantity;
+              }
+              final int ordersReceived = orders.length;
+
+              return Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildStatCard("Active Listings", activeCount.toString(), Icons.check_circle_rounded),
+                      const SizedBox(width: 16),
+                      _buildStatCard("Sold Products", soldCount.toString(), Icons.monetization_on_rounded),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildStatCard("Orders Received", ordersReceived.toString(), Icons.shopping_bag_rounded),
+                      const SizedBox(width: 16),
+                      _buildStatCard("Total Revenue", "\$${revenue.toStringAsFixed(1)}", Icons.account_balance_wallet_rounded),
+                    ],
+                  ),
+                ],
+              );
+            },
           );
         },
       );
@@ -426,7 +523,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _buildProfileTile(
         icon: Icons.analytics_outlined,
         title: "Sales Report",
-        onTap: () => _showMockMessage(context, "Sales Analytics UI"),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AnalyticsScreen()),
+          );
+        },
       ),
       Divider(height: 1, indent: 56, endIndent: 20, color: AppTheme.borderMedium),
       _buildProfileTile(
@@ -538,13 +640,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Text("Cancel", style: TextStyle(color: AppTheme.textMedium, fontWeight: FontWeight.bold)),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx); // pop dialog
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                (route) => false,
-              );
+              try {
+                await FirebaseAuth.instance.signOut();
+              } catch (e) {
+                debugPrint("Error signing out: $e");
+              }
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
             },
             child: const Text("Logout", style: TextStyle(color: Colors.red, fontWeight: FontWeight.w900)),
           ),

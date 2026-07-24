@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 
@@ -34,23 +33,6 @@ class _ChatScreenState extends State<ChatScreen> {
     AppState.addMessage(widget.conversation.id, text, isMe: true);
     _msgController.clear();
     _scrollToBottom();
-
-    // Simulate smart auto-reply response to feel dynamic!
-    Timer(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        String replyText = "Alright! Let me know if you need any other details about the item.";
-        if (text.toLowerCase().contains("avail") || text.toLowerCase().contains("buy")) {
-          replyText = "Yes, it is still available! Would you like to meet on campus to check it out?";
-        } else if (text.toLowerCase().contains("meet") || text.toLowerCase().contains("where")) {
-          replyText = "Let's meet at the Central Library lobby tomorrow at 2:00 PM.";
-        } else if (text.toLowerCase().contains("price") || text.toLowerCase().contains("discount")) {
-          replyText = "I can go down by \$2.00, but no more since it is in like-new condition!";
-        }
-        
-        AppState.addMessage(widget.conversation.id, replyText, isMe: false);
-        _scrollToBottom();
-      }
-    });
   }
 
   @override
@@ -58,11 +40,13 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     // Mark conversation read
     widget.conversation.unreadCount = 0;
+    AppState.listenToMessages(widget.conversation.id);
     _scrollToBottom();
   }
 
   @override
   void dispose() {
+    AppState.stopListeningToMessages();
     _msgController.dispose();
     _scrollController.dispose();
     super.dispose();

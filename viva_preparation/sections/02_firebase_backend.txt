@@ -1,0 +1,62 @@
+# PART 2: FIREBASE BACKEND DETAILS
+
+## 1. Firebase Initialization
+StudySwap references and launches Firebase connection settings using `main.dart`. Upon launching the app, the system calls:
+```dart
+WidgetsFlutterBinding.ensureInitialized();
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+AppState.init();
+```
+`DefaultFirebaseOptions.currentPlatform` extracts configurations for Android or iOS platforms (e.g. database URLs, API Keys, Sender IDs) stored inside `lib/firebase_options.dart`.
+
+## 2. Firebase Authentication
+- Purpose: Provides credentials management, secure authorization tokens, password verification, and authentication state events.
+- Usage: Every profile interaction in StudySwap uses it.
+- Files: `lib/screens/login_screen.dart`, `lib/screens/register_screen.dart`, `lib/screens/settings_screen.dart`, `lib/state/app_state.dart`.
+- Operations:
+  * Profile registration: `FirebaseAuth.instance.createUserWithEmailAndPassword(email, password)`
+  * Profile Login: `FirebaseAuth.instance.signInWithEmailAndPassword(email, password)`
+  * Active User state listener: `_auth.authStateChanges()` hook in `AppState.init()`.
+
+## 3. Cloud Firestore NoSQL Database
+- Purpose: A distributed JSON-document storage structure. We use it to record our relational entities without complex SQL joins.
+- Usage: Holds active catalogs, buyer orders, cart indexes, messaging channels, and notification logs.
+- Files: `lib/state/app_state.dart`, `lib/screens/analytics_screen.dart`, `lib/screens/dashboard_screen.dart`, and all transaction pages.
+- Structure: Collections hold Documents. Documents hold key-value maps. We use references (`doc()`, `collection()`) to query data.
+
+## 4. Firebase Storage
+- Purpose: Server binary storage for high-quality static assets.
+- Usage: Selected photos from student resources or profile portraits are held as raw files and assigned unique access URLs.
+- Files: `lib/state/app_state.dart` (specifically `_uploadProductImage` and `uploadAndUpdateProfileImage`).
+- Operations:
+  * Fetch bucket references: `FirebaseStorage.instance.ref()`.
+  * Upload file raw bytes: `storageRef.putFile()` or `storageRef.putData()`.
+  * Obtain public link: `snapshot.ref.getDownloadURL()`.
+
+## 5. Realtime Streams & Listeners
+- Purpose: Keep the client UI dynamically in sync with the cloud database.
+- Logic: Firestore pushes data changes automatically to client devices using underlying web sockets. In `app_state.dart`, we subscribe to queries using `.snapshots()`. Every time a document matches the query or updates, the stream fires, yielding `QuerySnapshot` or `DocumentSnapshot`. We pass this data to our Flutter `ValueNotifiers`, causing listeners block to rebuild the UI instantly.
+
+## 6. Authentication State Flow chart
+The diagram below describes the session routing lifecycle during initialization:
+
+              [ App Launch: main.dart ]
+                         |
+            [ Firebase.initializeApp() ]
+                         |
+           [ AppState.init() Hook starts ]
+                         |
+          [ Listen authStateChanges() Stream ]
+                         |
+           Is there a saved user token?
+             /                       \
+           YES                        NO
+           /                            \
+[ _setupAllSubscriptions() ]        [ _clearAllSubscriptions() ]
+          |                                      |
+[ Load User, Products, Cart,            [ Reset in-memory State ]
+  Wishlist, Orders streams ]                    |
+          |                        [ Route client to LoginScreen ]
+[ Route client to HomeScreen ]

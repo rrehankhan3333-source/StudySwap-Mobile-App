@@ -1,0 +1,37 @@
+# PART 9: FIREBASE STORAGE & IMAGE HANDLING
+
+StudySwap handles binary files (e.g., student listing photos and profile pictures) using Firebase Storage.
+
+## 1. Local Image Selection (FilePicker)
+When a user updates their profile picture or uploads a new listing:
+- Pick selection: Rather than standard camera libraries, the app calls `FilePicker.pickFiles()` to select a file from the device storage.
+- File filters: The picker restricts file types to `['jpg', 'jpeg', 'png', 'webp']` and checks the selected file size, rejecting files larger than 5MB to optimize network performance.
+
+---
+
+## 2. Upload Flow to Firebase Storage
+- Path structure: Images are stored under organized folder structures.
+  * Listing images: `product_images/$productId`
+  * Profile images: `profile_images/$uid`
+- Platform-Specific Streams:
+  * On Mobile (Android/iOS): Uploaded directly from the local path:
+    `UploadTask uploadTask = storageRef.putFile(File(localPath));`
+  * On Web: Local file paths are not accessible for security reasons. Instead, the raw image bytes are uploaded as a data URI:
+    `UploadTask uploadTask = storageRef.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));`
+- Await completion: The app sits on an `await uploadTask` hook to monitor upload progress.
+
+---
+
+## 3. Obtaining Download URLs
+Once the upload finishes successfully:
+- Public URL mapping: The app requests the public download URL:
+  `final downloadUrl = await snapshot.ref.getDownloadURL();`
+- URL storage rationale: The download URL is a secure tokenized HTTPS link pointing to the file stored in Google Cloud Storage.
+- Database writing: The retrieved URL is stored in the Firestore document under the `imageUrl` or `profileImage` fields.
+
+---
+
+## 4. Why We Store URLs Instead of Raw Image Bytes
+- Firestore Size Caps: Firestore documents are capped at a maximum size of 1MB. A single raw image can easily exceed this limit.
+- Cost and performance optimization: Firestore is charged by the number of read/write operations. Querying megabytes of raw image data on every document load would cause high latency and increase database costs.
+- Caching benefits: Storing static HTTPS URLs allows the Flutter client to cache downloaded images locally using standard network image widgets, improving app responsiveness.

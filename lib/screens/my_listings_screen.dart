@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'edit_listing_screen.dart';
@@ -28,6 +30,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
       backgroundColor: const Color(0xffF8FAFC),
       appBar: AppBar(
@@ -79,18 +83,35 @@ class _MyListingsScreenState extends State<MyListingsScreen> with SingleTickerPr
         ),
         shape: Border(bottom: BorderSide(color: AppTheme.borderMedium, width: 1.5)),
       ),
-      body: ValueListenableBuilder<List<Product>>(
-        valueListenable: AppState.productsNotifier,
-        builder: (context, products, child) {
-          final sellerName = AppState.nameNotifier.value;
-          // Filter listings owned by this seller
-          final myListings = products.where((p) => p.sellerName == sellerName).toList();
-          
-          // Fallback if no seller matching found (for evaluation robustness, fallback to all if empty)
-          final finalListings = myListings.isEmpty ? products : myListings;
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collection('products')
+            .where("sellerId", isEqualTo: uid)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Text(
+                  "Error reading listings: ${snapshot.error}",
+                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
 
-          final activeListings = finalListings.where((p) => !p.isSold).toList();
-          final soldListings = finalListings.where((p) => p.isSold).toList();
+          final docs = snapshot.data?.docs ?? [];
+          final products = docs.map((doc) => Product.fromFirestore(doc.data(), doc.id)).toList();
+
+          final activeListings = products.where((p) => !p.isSold).toList();
+          final soldListings = products.where((p) => p.isSold).toList();
 
           return TabBarView(
             controller: _tabController,

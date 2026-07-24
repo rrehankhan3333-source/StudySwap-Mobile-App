@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'dart:io' show File;
 import 'package:file_picker/file_picker.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -17,11 +18,13 @@ class _EditListingScreenState extends State<EditListingScreen> {
   late TextEditingController _titleController;
   late TextEditingController _priceController;
   late TextEditingController _descriptionController;
+  late TextEditingController _stockController;
 
   late String _condition;
   late String _category;
   late String _imageUrl;
   String? _customImagePath;
+  bool _isSaving = false;
 
   final List<Map<String, String>> _mockPhotos = [
     {
@@ -48,40 +51,76 @@ class _EditListingScreenState extends State<EditListingScreen> {
 
   Future<void> _pickCustomImage() async {
     try {
-      FilePickerResult? result = await FilePicker.pickFiles(
+      String? path;
+      String? fileName;
+      int? sizeInBytes;
+
+      // Use FilePicker globally to avoid MissingPluginException from image_picker
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
       );
-      if (result != null && result.files.single.path != null) {
-        final path = result.files.single.path!;
-        final file = File(path);
-        
+
+      if (result != null) {
+        fileName = result.files.single.name;
+        sizeInBytes = result.files.single.size;
+
+        if (kIsWeb) {
+          final bytes = result.files.single.bytes;
+          if (bytes != null) {
+            final extension = fileName.split('.').last.toLowerCase();
+            path = Uri.dataFromBytes(bytes, mimeType: 'image/$extension').toString();
+          }
+        } else {
+          path = result.files.single.path;
+        }
+      }
+
+      if (path != null && fileName != null) {
         // Format check
-        final extension = path.split('.').last.toLowerCase();
+        final extension = fileName.split('.').last.toLowerCase();
         if (extension != 'jpg' && extension != 'jpeg' && extension != 'png' && extension != 'webp') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Error: Only JPG, PNG, and WEBP formats are supported.")),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Only JPG, JPEG, PNG, WEBP images can be selected.")),
+            );
+          }
           return;
         }
 
-        final sizeInBytes = await file.length();
-        final sizeInMb = sizeInBytes / (1024 * 1024);
-        if (sizeInMb > 5) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Error: Image size cannot exceed 5 MB.")),
-          );
-          return;
+        // Size check (Max 5MB)
+        if (sizeInBytes != null) {
+          final sizeInMb = sizeInBytes / (1024 * 1024);
+          if (sizeInMb > 5) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Error: Image size cannot exceed 5 MB.")),
+              );
+            }
+            return;
+          }
         }
+
         setState(() {
           _customImagePath = path;
-          _imageUrl = path;
+          _imageUrl = path!;
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error picking image: $e")),
-      );
+      final errStr = e.toString().toLowerCase();
+      if (errStr.contains('permission') || errStr.contains('access')) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Gallery permission is required to select images. Please enable it in Settings.")),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error picking image: $e")),
+          );
+        }
+      }
     }
   }
 
@@ -91,6 +130,7 @@ class _EditListingScreenState extends State<EditListingScreen> {
     _titleController = TextEditingController(text: widget.product.title);
     _priceController = TextEditingController(text: widget.product.price.toStringAsFixed(2));
     _descriptionController = TextEditingController(text: widget.product.description);
+    _stockController = TextEditingController(text: widget.product.stock.toString());
     _condition = widget.product.condition;
     _category = widget.product.category;
     _imageUrl = widget.product.imageUrl;
@@ -107,6 +147,7 @@ class _EditListingScreenState extends State<EditListingScreen> {
     _titleController.dispose();
     _priceController.dispose();
     _descriptionController.dispose();
+    _stockController.dispose();
     super.dispose();
   }
 
@@ -171,14 +212,16 @@ class _EditListingScreenState extends State<EditListingScreen> {
         centerTitle: true,
         shape: Border(bottom: BorderSide(color: AppTheme.borderMedium, width: 1.5)),
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
               Text(
                 "Change Visual Asset",
                 style: TextStyle(
@@ -276,12 +319,33 @@ class _EditListingScreenState extends State<EditListingScreen> {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(19),
-                              child: Image.file(
-                                File(_customImagePath!),
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
+                              child: kIsWeb
+                                  ? Image.network(
+                                      _customImagePath!,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) => Container(
+                                        color: AppTheme.bgSurface,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        child: Icon(Icons.broken_image_rounded, color: AppTheme.textMedium),
+                                      ),
+                                    )
+                                  : Image.file(
+                                      File(_customImagePath!.startsWith('file://') 
+                                          ? Uri.parse(_customImagePath!).toFilePath() 
+                                          : _customImagePath!),
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) => Container(
+                                        color: AppTheme.bgSurface,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        child: Icon(Icons.broken_image_rounded, color: AppTheme.textMedium),
+                                      ),
+                                    ),
                             ),
                             Positioned(
                               top: 8,
@@ -296,7 +360,7 @@ class _EditListingScreenState extends State<EditListingScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: const BoxDecoration(
-                                    color: const Color(0xb3000000),
+                                    color: Color(0xb3000000),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(Icons.close_rounded, color: Colors.white, size: 16),
@@ -365,6 +429,29 @@ class _EditListingScreenState extends State<EditListingScreen> {
                 },
               ),
 
+              const SizedBox(height: 18),
+
+              TextFormField(
+                controller: _stockController,
+                keyboardType: TextInputType.number,
+                style: TextStyle(color: AppTheme.textDark, fontSize: 14),
+                decoration: _buildInputDecoration(
+                  labelText: "Stock Quantity",
+                  hintText: "e.g. 10",
+                  prefixIcon: Icon(Icons.inventory_2_outlined, color: AppTheme.textMedium, size: 20),
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return "Stock quantity is required";
+                  }
+                  final n = int.tryParse(val);
+                  if (n == null || n < 0) {
+                    return "Enter a valid stock quantity (>= 0)";
+                  }
+                  return null;
+                },
+              ),
+
               const SizedBox(height: 22),
 
               Text(
@@ -389,6 +476,19 @@ class _EditListingScreenState extends State<EditListingScreen> {
                       if (selected) {
                         setState(() {
                           _category = cat;
+                          if (_customImagePath == null) {
+                            if (cat == "Books") {
+                              _imageUrl = "assets/images/book_cover.jpg";
+                            } else if (cat == "Notes") {
+                              _imageUrl = "assets/images/written_notes.jpg";
+                            } else if (cat == "Electronics") {
+                              _imageUrl = "assets/images/electronics.jpg";
+                            } else if (cat == "Stationery") {
+                              _imageUrl = "assets/images/stationery.jpg";
+                            } else {
+                              _imageUrl = "assets/images/others.jpg";
+                            }
+                          }
                         });
                       }
                     },
@@ -480,40 +580,64 @@ class _EditListingScreenState extends State<EditListingScreen> {
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      final double priceValue = double.parse(_priceController.text);
-                      
-                      final updatedProduct = Product(
-                        id: widget.product.id,
-                        title: _titleController.text.trim(),
-                        price: priceValue,
-                        imageUrl: _imageUrl,
-                        sellerName: widget.product.sellerName,
-                        rating: widget.product.rating,
-                        reviewsCount: widget.product.reviewsCount,
-                        description: _descriptionController.text.trim(),
-                        condition: _condition,
-                        category: _category,
-                        isFavorite: widget.product.isFavorite,
-                        isSold: widget.product.isSold,
-                      );
+                  onPressed: _isSaving
+                      ? null
+                      : () async {
+                          if (_formKey.currentState!.validate()) {
+                            final double priceValue = double.parse(_priceController.text);
+                            
+                            final updatedProduct = Product(
+                              id: widget.product.id,
+                              title: _titleController.text.trim(),
+                              price: priceValue,
+                              stock: int.parse(_stockController.text.trim()),
+                              imageUrl: _imageUrl,
+                              sellerName: widget.product.sellerName,
+                              rating: widget.product.rating,
+                              reviewsCount: widget.product.reviewsCount,
+                              description: _descriptionController.text.trim(),
+                              condition: _condition,
+                              category: _category,
+                              isFavorite: widget.product.isFavorite,
+                              isSold: widget.product.isSold,
+                              status: widget.product.status,
+                            );
 
-                      AppState.editProduct(updatedProduct);
-                      
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Listing updated successfully!"),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
+                            setState(() {
+                              _isSaving = true;
+                            });
 
-                      Navigator.pop(context); // pop edit listing screen
-                      
-                      // Also pop the details screen to go back to the list and see updated content
-                      Navigator.pop(context);
-                    }
-                  },
+                            try {
+                              await AppState.editProduct(updatedProduct);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Listing updated successfully!"),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                Navigator.pop(context); // pop edit listing screen
+                                Navigator.pop(context); // pop product details screen
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("Failed to update listing: $e"),
+                                    behavior: SnackBarBehavior.floating,
+                                    backgroundColor: Colors.redAccent.shade700,
+                                  ),
+                                );
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() {
+                                  _isSaving = false;
+                                });
+                              }
+                            }
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -528,6 +652,41 @@ class _EditListingScreenState extends State<EditListingScreen> {
             ],
           ),
         ),
+      ),
+          if (_isSaving)
+            Container(
+              color: Colors.black.withAlpha(90),
+              child: Center(
+                child: Card(
+                  color: AppTheme.bgCard,
+                  surfaceTintColor: Colors.transparent,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          "Uploading files & saving changes...",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

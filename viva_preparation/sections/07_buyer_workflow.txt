@@ -1,0 +1,53 @@
+# PART 7: BUYER WORKFLOW & LOGICAL SEQUENCES
+
+This chapter details the sequential operations performed by a Buyer in StudySwap.
+
+## 1. Account Creation and Login
+Buyers select "Buyer" during registration. This writes `accountType: "Buyer"` to Firestore. When they log in, the screen manually validates their credentials, queries their account type, updates `userRoleNotifier`, and directs them to the home screen.
+
+---
+
+## 2. Resource Browsing and Discovery
+Once logged in, buyers land on `HomeContent`. Inside `HomeScreen`:
+- Dynamic sliders: Auto-slide banners display promotional messages or announcements.
+- Category browsing: Horizontal lists categorized by resource types. Tapping a category (e.g. `'Notes'`) filters the displayed products.
+- Product Cards listing: Renders all active items uploaded by sellers, excluding sold items, using `GridView.builder`.
+- Search Screen routing: Tapping the Search bar opens a filtered search page using `.contains()` on product titles.
+- Product Details Screen: Selecting an item displays the product's details: title, condition, price, description, seller's name, rating, reviews count, and stock quantity.
+
+---
+
+## 3. wishlist (Saved Items)
+- Favorites Toggle: TAPPING the favorite heart icon in the listing card or details screen calls:
+  `await AppState.toggleFavorite(product);`
+- Firestore Operations:
+  * If the favorite document (`${uid}_${productId}`) already exists in the `savedItems` collection, it is deleted.
+  * If it does not exist, a new document is written:
+    `await _firestore.collection('savedItems').doc("${uid}_${product.id}").set({ 'userId': uid, 'productId': product.id, ... });`
+- UI Syncing: A Firestore stream listener watches changes in `savedItems` filters by `userId == uid`, and updates `wishlistNotifier`, immediately updating the wishlist screen and heart indicators.
+
+---
+
+## 4. shopping Cart and Checkout Lifecycle
+- Add to Cart: Tapping "Add to Cart" on the details screen triggers:
+  `await AppState.addToCart(product);`
+  * Checks if the document `${uid}_${productId}` exists in the `cart` collection.
+  * If yes, it updates the quantity: `update({'quantity': currentQty + 1})`.
+  * If no, it creates a new document with sharded metadata.
+- Cart Management: In `CartScreen`, buyers can increase/decrease quantities, triggering `incrementCartItem` and `decrementCartItem` updates in Firestore.
+- Checkout & Order Placement: When the buyer clicks "Checkout", the app executes:
+  `await AppState.checkout();`
+  This uses a Firestore batch transaction:
+  * For each cart item, it writes a new document to the `orders` collection with status `'Pending'`.
+  * Deletes the item from the `cart` collection using `batch.delete()`.
+  * Decrements product stock field using `batch.update()`.
+  * Triggers notifications: "Order Placed" notification to the buyer, and "New Order" notifications to the sellers.
+  * Commits the batch transaction: `await batch.commit();`.
+
+---
+
+## 5. Order Tracking & Communications
+- Order lists: Buyers access their orders under "My Orders" in the Profile screen via `orders_screen.dart`.
+- Tabs: Separates orders into "Active" and "Completed" based on status.
+- Real-time updates: The screen listens to the `orders` collection, matching documents where `buyerId == uid`. Any status update performed by the seller updates the buyer's UI instantly.
+- Negotiations: Buyers negotiate directly with sellers by tapping "Chat with Seller" on details pages, launching real-time conversations.

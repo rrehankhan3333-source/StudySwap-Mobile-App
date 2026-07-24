@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import '../state/app_state.dart';
 
 class AppTheme {
@@ -298,7 +300,41 @@ class AppTheme {
     double? width,
     double? height,
   }) {
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    if (imageUrl.isEmpty) {
+      return Image.asset(
+        'assets/images/others.jpg',
+        fit: fit,
+        width: width,
+        height: height,
+      );
+    }
+
+    if (imageUrl.startsWith('data:')) {
+      try {
+        final base64Str = imageUrl.split(',').last;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(
+          bytes,
+          fit: fit,
+          width: width,
+          height: height,
+          errorBuilder: (context, error, stackTrace) => Container(
+            color: bgSurface,
+            width: width,
+            height: height,
+            child: Icon(Icons.broken_image_rounded, color: textLight),
+          ),
+        );
+      } catch (e) {
+        debugPrint("Error decoding base64 image: $e");
+        return Container(
+          color: bgSurface,
+          width: width,
+          height: height,
+          child: Icon(Icons.broken_image_rounded, color: textLight),
+        );
+      }
+    } else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('blob:') || (kIsWeb && !imageUrl.startsWith('assets/'))) {
       return Image.network(
         imageUrl,
         fit: fit,
@@ -343,28 +379,66 @@ class AppTheme {
         ),
       );
     } else {
+      if (kIsWeb) {
+        return Image.asset(
+          'assets/images/others.jpg',
+          fit: fit,
+          width: width,
+          height: height,
+        );
+      }
+      String cleanedPath = imageUrl;
+      if (cleanedPath.startsWith('file://')) {
+        try {
+          cleanedPath = Uri.parse(cleanedPath).toFilePath();
+        } catch (_) {}
+      }
+      final file = File(cleanedPath);
       return Image.file(
-        File(imageUrl),
+        file,
         fit: fit,
         width: width,
         height: height,
-        errorBuilder: (context, error, stackTrace) => Container(
-          color: bgSurface,
-          width: width,
-          height: height,
-          child: Icon(Icons.menu_book_rounded, color: textLight),
-        ),
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint("Failed to load local file image ($cleanedPath): $error");
+          return Container(
+            color: bgSurface,
+            width: width,
+            height: height,
+            child: Icon(Icons.broken_image_rounded, color: textLight),
+          );
+        },
       );
     }
   }
 
   static ImageProvider buildProductImageProvider(String imageUrl) {
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    if (imageUrl.isEmpty) {
+      return const AssetImage('assets/images/others.jpg');
+    }
+
+    if (imageUrl.startsWith('data:')) {
+      try {
+        final base64Str = imageUrl.split(',').last;
+        return MemoryImage(base64Decode(base64Str));
+      } catch (e) {
+        return const AssetImage('assets/images/others.jpg');
+      }
+    } else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('blob:') || (kIsWeb && !imageUrl.startsWith('assets/'))) {
       return NetworkImage(imageUrl);
     } else if (imageUrl.startsWith('assets/')) {
       return AssetImage(imageUrl);
     } else {
-      return FileImage(File(imageUrl));
+      if (kIsWeb) {
+        return const AssetImage('assets/images/others.jpg');
+      }
+      String cleanedPath = imageUrl;
+      if (cleanedPath.startsWith('file://')) {
+        try {
+          cleanedPath = Uri.parse(cleanedPath).toFilePath();
+        } catch (_) {}
+      }
+      return FileImage(File(cleanedPath));
     }
   }
 }

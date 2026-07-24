@@ -1,0 +1,267 @@
+# PART 13: IMPORTANT FUNCTIONS DIAGNOSIS
+
+This chapter displays the execution flow, code fragments, parameters, and design structures of the 5 most critical functions of StudySwap.
+
+## 1. checkout()
+- File location: `lib/state/app_state.dart`
+- parameters: None.
+- Return Type: `Future<void>`
+- Exact Code Snippet:
+```dart
+static Future<void> checkout() async {
+  final uid = _auth.currentUser?.uid;
+  if (uid == null) return;
+  final items = List<CartItem>.from(cartNotifier.value);
+  if (items.isEmpty) return;
+
+  final batch = _firestore.batch();
+  for (var item in items) {
+    // 1. Create order
+    final orderRef = _firestore.collection('orders').doc();
+    batch.set(orderRef, {
+      'buyerId': uid,
+      'buyerName': nameNotifier.value,
+      'sellerId': item.product.sellerId,
+      'sellerName': item.product.sellerName,
+      'productId': item.product.id,
+      'price': item.product.price,
+      'quantity': item.quantity,
+      'status': 'Pending',
+      'purchaseDate': FieldValue.serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'product': {
+        'id': item.product.id,
+        'title': item.product.title,
+        'imageUrl': item.product.imageUrl,
+        'category': item.product.category,
+        'condition': item.product.condition,
+        'description': item.product.description,
+      }
+    });
+
+    // 2. Decrement stock
+    final prodRef = _firestore.collection('products').doc(item.product.id);
+    final currentStock = item.product.stock;
+    final newStock = (currentStock - item.quantity).clamp(0, 999999);
+    batch.update(prodRef, {
+      'stock': newStock,
+      'isSold': newStock == 0,
+    });
+
+    // 3. Delete from cart
+    final cartRef = _firestore.collection('cart').doc("${uid}_${item.product.id}");
+    batch.delete(cartRef);
+    
+    // 4. Send seller alert
+    final sellAlertRef = _firestore.collection('notifications').doc();
+    batch.set(sellAlertRef, {
+      'notificationId': sellAlertRef.id,
+      'userId': item.product.sellerId,
+      'title': 'New Order Received!',
+      'body': '${nameNotifier.value} bought ${item.quantity}x "${item.product.title}"',
+      'type': 'Sales',
+      'relatedId': orderRef.id,
+      'isRead': false,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Send buyer alert
+  final buyAlertRef = _firestore.collection('notifications').doc();
+  batch.set(buyAlertRef, {
+    'notificationId': buyAlertRef.id,
+    'userId': uid,
+    'title': 'Checkout Successful!',
+    'body': 'Your order for ${items.length} items has been placed.',
+    'type': 'System',
+    'relatedId': '',
+    'isRead': false,
+    'timestamp': FieldValue.serverTimestamp(),
+  });
+
+  await batch.commit();
+}
+```
+- Execution Flow:
+  1. Retrieve active Buyer user ID reference.
+  2. Extract cached elements from `cartNotifier`.
+  3. Instantiate a Firestore `WriteBatch`.
+  4. Loop through cart items:
+     - Log a new unique document in the `orders` collection.
+     - Calculate the remaining stock (`current - quantity`) and update the product document. If stock falls to 0, mark the product as sold.
+     - Delete the corresponding item document in the `cart` collection.
+     - Add a real-time order alert for the seller.
+  5. Add a checkout success alert for the buyer.
+  6. Commit all operations atomically via `batch.commit()`.
+
+---
+
+## 2. startOrGetConversation()
+- File location: `lib/state/app_state.dart`
+- parameters: `Product product`
+- Return Type: `Future<String>` (returns conversation ID string)
+- Exact Code Snippet:
+```dart
+static Future<String> startOrGetConversation(Product product) async {
+  final uid = _auth.currentUser?.uid;
+  if (uid == null) throw Exception("User not authenticated");
+
+  // Check if conversation already exists
+  final query = await _firestore.collection('conversations')
+      .where('buyerId', isEqualTo: uid)
+      .where('sellerId', isEqualTo: product.sellerId)
+      .where('productId', isEqualTo: product.id)
+      .limit(1)
+      .get();
+
+  if (query.docs.isNotEmpty) {
+    return query.docs.first.id;
+  }
+
+  // Create new conversation
+  final docRef = _firestore.collection('conversations').doc();
+  await docRef.set({
+    'participants': [uid, product.sellerId],
+    'buyerId': uid,
+    'sellerId': product.sellerId,
+    'buyerName': nameNotifier.value,
+    'sellerName': product.sellerName,
+    'productId': product.id,
+    'productTitle': product.title,
+    'productImageUrl': product.imageUrl,
+    'lastMessage': '',
+    'lastMessageTime': FieldValue.serverTimestamp(),
+    'unreadCount': {
+      uid: 0,
+      product.sellerId: 0,
+    }
+  });
+
+  return docRef.id;
+}
+```
+- Execution Flow:
+  1. Verify buyer session details.
+  2. Execute a Firestore query filtering by buyer ID, seller ID, and product ID.
+  3. If a matching document is found, return its document ID to navigate directly to the chat.
+  4. If no document exists, instantiate a new document reference with `_firestore.collection('conversations').doc()`.
+  5. Set the new conversation metadata and return its document ID.
+
+---
+
+## 3. seedInitialProductsIfEmpty()
+- File Location: `lib/state/app_state.dart`
+- parameters: None
+- Return Type: `Future<void>`
+- Exact Code Snippet:
+```dart
+static Future<void> seedInitialProductsIfEmpty() async {
+  final snap = await _firestore.collection('products').limit(1).get();
+  if (snap.docs.isNotEmpty) return; // already has products
+
+  final list = [
+    Product(
+      id: "1",
+      title: "Engineering Electromagnetics",
+      price: 45.0,
+      imageUrl: "assets/images/book_cover.jpg",
+      sellerName: "John Doe",
+      sellerId: "mock_seller_john",
+      description: "Standard course book for BEE. Clean pages.",
+      condition: "Good",
+      category: "Books",
+      stock: 5,
+    ),
+    // ... other mock products
+  ];
+
+  final batch = _firestore.batch();
+  for (var p in list) {
+    final ref = _firestore.collection('products').doc(p.id);
+    batch.set(ref, p.toMap());
+  }
+  await batch.commit();
+}
+```
+- Purpose: Seeds the database with default listing data if the collection is empty.
+- Execution Flow:
+  1. Requests a single document from the products catalog.
+  2. If a document is fetched, return early.
+  3. If empty, loop through the mock listings array and write them to a batch.
+  4. Write the default catalog to Firestore using `batch.commit()`.
+
+---
+
+## 4. uploadAndUpdateProfileImage()
+- File Location: `lib/state/app_state.dart`
+- parameters: `String localPath`
+- Return Type: `Future<void>`
+- Exact Code Snippet:
+```dart
+static Future<void> uploadAndUpdateProfileImage(String localPath) async {
+  final uid = _auth.currentUser?.uid;
+  if (uid == null) return;
+
+  final storageRef = FirebaseStorage.instance.ref().child('profile_images/$uid');
+  String downloadUrl;
+
+  if (kIsWeb || localPath.startsWith('data:image')) {
+    final dataUri = Uri.parse(localPath);
+    final bytes = dataUri.data!.contentAsBytes();
+    final mime = dataUri.data!.mimeType;
+    final uploadTask = storageRef.putData(bytes, SettableMetadata(contentType: mime));
+    final snapshot = await uploadTask;
+    downloadUrl = await snapshot.ref.getDownloadURL();
+  } else {
+    final file = File(localPath);
+    final uploadTask = storageRef.putFile(file);
+    final snapshot = await uploadTask;
+    downloadUrl = await snapshot.ref.getDownloadURL();
+  }
+
+  await _firestore.collection('users').doc(uid).update({
+    'profileImage': downloadUrl,
+  });
+}
+```
+- Execution Flow:
+  1. Verify user authentication.
+  2. Instantiate a Firebase Storage path reference: `profile_images/$uid`.
+  3. Check the client environment:
+     - On Web/DataURI: Extract bytes and call `putData()`.
+     - On Mobile: Create a File object and call `putFile()`.
+  4. Await file upload and fetch the public download URL.
+  5. Update the `profileImage` field in the user's Firestore document.
+
+---
+
+## 5. toggleFavorite()
+- File Location: `lib/state/app_state.dart`
+- parameters: `Product product`
+- Return Type: `Future<void>`
+- Exact Code Snippet:
+```dart
+static Future<void> toggleFavorite(Product product) async {
+  final uid = _auth.currentUser?.uid;
+  if (uid == null) return;
+
+  final ref = _firestore.collection('savedItems').doc("${uid}_${product.id}");
+  final doc = await ref.get();
+
+  if (doc.exists) {
+    await ref.delete();
+  } else {
+    await ref.set({
+      'userId': uid,
+      'productId': product.id,
+      'savedAt': FieldValue.serverTimestamp(),
+    });
+  }
+}
+```
+- Execution Flow:
+  1. Retrieve currently active user credentials.
+  2. Point document reference to `savedItems/${uid}_${productId}`.
+  3. Fetch the document using `get()`.
+  4. If the document exists, remove it from the wishlist using `delete()`.
+  5. If the document does not exist, add it to the wishlist using `set()`.
